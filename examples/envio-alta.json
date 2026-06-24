@@ -1,0 +1,39 @@
+{
+  "cabecera": { "NombreRazon": "Clínica Demo SL", "NIF": "89890001K" },
+  "alta": {
+    "IDVersion": "1.0",
+    "IDFactura": {
+      "IDEmisorFactura": "89890001K",
+      "NumSerieFactura": "PRUEBA-001",
+      "FechaExpedicionFactura": "01-01-2024"
+    },
+    "NombreRazonEmisor": "Clínica Demo SL",
+    "TipoFactura": "F1",
+    "DescripcionOperacion": "Servicio dental",
+    "Desglose": [
+      {
+        "ClaveRegimen": "01",
+        "CalificacionOperacion": "S1",
+        "TipoImpositivo": "21",
+        "BaseImponibleOimporteNoSujeto": "100.00",
+        "CuotaRepercutida": "21.00"
+      }
+    ],
+    "CuotaTotal": "21.00",
+    "ImporteTotal": "121.00",
+    "Encadenamiento": { "PrimerRegistro": "S" },
+    "SistemaInformatico": {
+      "NombreRazon": "Software Demo SL",
+      "NIF": "B00000000",
+      "NombreSistemaInformatico": "verifactu",
+      "IdSistemaInformatico": "01",
+      "Version": "0.1.0",
+      "NumeroInstalacion": "0001",
+      "TipoUsoPosibleSoloVerifactu": "S",
+      "TipoUsoPosibleMultiOT": "N",
+      "IndicadorMultiplesOT": "N"
+    },
+    "FechaHoraHusoGenRegistro": "2024-01-01T19:20:30+01:00",
+    "TipoHuella": "01"
+  }
+}
