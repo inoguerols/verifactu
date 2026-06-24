@@ -1,0 +1,27 @@
+name: publish
+
+# Trusted Publishing (OIDC): npm confía en este workflow de GitHub, sin token.
+# Configura el publisher de confianza en npmjs.com para @inoguerols/verifactu
+# (repo inoguerols/verifactu, workflow publish.yml). Dispara al publicar una Release.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # imprescindible para OIDC
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest # OIDC trusted publishing requiere npm >= 11.5
+      - run: npm ci
+      - run: npm test
+      - run: npm publish --access public
