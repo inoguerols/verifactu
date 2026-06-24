@@ -59,3 +59,20 @@ test('segundo registro que no referencia la huella previa → encadenamiento-hue
   const informe = lint([r0, r1Malo])
   expect(informe.incidencias.some((x) => x.code === 'encadenamiento-huella')).toBe(true)
 })
+
+test('huella adulterada en un registro no contamina el diagnóstico de los siguientes (fix #1)', () => {
+  const r0 = alta('12345678/G33', '')
+  const r1 = alta('12345679/G33', r0.Huella!, r0) // r1 legítimo, encadenado al r0 legítimo
+  const r0Adulterado = { ...r0, Huella: 'B'.repeat(64) } // formato válido, valor falso
+  const informe = lint([r0Adulterado, r1])
+  expect(informe.incidencias.filter((x) => x.index === 0 && x.code === 'cadena-rota')).toHaveLength(1)
+  // r1 sigue verificándose contra la huella LEGÍTIMA del r0 → sin incidencias
+  expect(informe.incidencias.filter((x) => x.index === 1)).toHaveLength(0)
+})
+
+test('fecha estructural pero imposible (32-13-2024) → fecha-formato (fix #3)', () => {
+  const r0 = alta('12345678/G33', '')
+  const malo = { ...r0, IDFactura: { ...r0.IDFactura, FechaExpedicionFactura: '32-13-2024' } }
+  const informe = lint([malo])
+  expect(informe.incidencias.some((x) => x.code === 'fecha-formato')).toBe(true)
+})

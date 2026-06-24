@@ -6,7 +6,7 @@
 export type Entorno = 'produccion' | 'pruebas'
 
 /** Tipo de factura (subconjunto). F1 ordinaria, F2 simplificada, R1-R5 rectificativas. */
-export type TipoFactura = 'F1' | 'F2' | 'F3' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5'
+export type TipoFactura = 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5'
 
 /** Identificación de una factura (clave del registro y del encadenamiento). */
 export interface IDFactura {
