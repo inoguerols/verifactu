@@ -6,13 +6,36 @@
   "license": "MIT",
   "author": "Ignacio Noguerol (inoguerols)",
   "homepage": "https://github.com/inoguerols/verifactu",
-  "repository": { "type": "git", "url": "git+https://github.com/inoguerols/verifactu.git" },
-  "keywords": ["verifactu", "aeat", "facturacion", "factura", "hacienda", "antifraude", "spain", "tax", "invoice"],
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inoguerols/verifactu.git"
+  },
+  "keywords": [
+    "verifactu",
+    "aeat",
+    "facturacion",
+    "factura",
+    "hacienda",
+    "antifraude",
+    "spain",
+    "tax",
+    "invoice"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": { "verifactu": "./dist/cli.js" },
-  "files": ["dist", "spec"],
+  "bin": {
+    "verifactu": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "spec"
+  ],
   "scripts": {
     "build": "tsup",
     "prepare": "tsup",
@@ -32,5 +55,7 @@
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }
