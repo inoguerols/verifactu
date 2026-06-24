@@ -31,7 +31,7 @@ const RE_HUELLA = /^[0-9A-F]{64}$/
 const RE_ISO_HUSO =
   /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(\.\d+)?([+-](0\d|1[0-4]):[0-5]\d|Z)$/
 // ponytail: forma básica del NIF emisor (9 alfanum). Dígito de control → fase 2.
-const RE_NIF = /^[0-9A-Z]{9}$/i
+const RE_NIF = /^[0-9A-Z]{9}$/
 
 /**
  * Verifica una serie de registros de alta en el orden de la cadena.
@@ -68,13 +68,25 @@ export function lint(registros: RegistroAlta[]): InformeCumplimiento {
 
     // -- encadenamiento declarado (contra la huella LEGÍTIMA del registro previo) --
     const enc = r.Encadenamiento
-    if (i === 0) {
+    if (!enc || typeof enc !== 'object') {
+      add(i, 'error', 'falta-encadenamiento', 'Falta Encadenamiento')
+    } else if (i === 0) {
       if (!('PrimerRegistro' in enc) || enc.PrimerRegistro !== 'S')
         add(i, 'error', 'encadenamiento-primero', 'El primer registro debe declarar Encadenamiento.PrimerRegistro = "S"')
     } else if (!('RegistroAnterior' in enc)) {
       add(i, 'error', 'encadenamiento-anterior', 'Falta Encadenamiento.RegistroAnterior')
-    } else if (enc.RegistroAnterior.Huella !== huellaAnterior) {
-      add(i, 'error', 'encadenamiento-huella', 'La Huella referida en Encadenamiento.RegistroAnterior no coincide con la del registro previo')
+    } else {
+      const ant = enc.RegistroAnterior
+      const prev = registros[i - 1]
+      if (ant.Huella !== huellaAnterior)
+        add(i, 'error', 'encadenamiento-huella', 'La Huella referida en Encadenamiento.RegistroAnterior no coincide con la del registro previo')
+      if (
+        prev &&
+        (ant.IDEmisorFactura !== prev.IDFactura?.IDEmisorFactura ||
+          ant.NumSerieFactura !== prev.IDFactura?.NumSerieFactura ||
+          ant.FechaExpedicionFactura !== prev.IDFactura?.FechaExpedicionFactura)
+      )
+        add(i, 'error', 'encadenamiento-identidad', 'RegistroAnterior no identifica correctamente la factura previa')
     }
 
     // -- huella propia: recálculo e integridad --
@@ -100,9 +112,10 @@ export function lint(registros: RegistroAlta[]): InformeCumplimiento {
       add(i, 'error', 'cadena-rota', 'La Huella no coincide con el recálculo (registro alterado o cadena rota)')
     }
 
-    // Avanzar SIEMPRE con la huella legítima recalculada (no la almacenada, que puede
-    // estar adulterada): así los registros siguientes se verifican contra la cadena real.
-    huellaAnterior = huellaLegitima ?? r.Huella ?? huellaAnterior
+    // Avanzar SOLO con la huella legítima recalculada. Si no se pudo recalcular
+    // (faltan campos de ID), se mantiene el ancla previa conocida: nunca se confía
+    // en la huella almacenada del documento bajo verificación.
+    if (huellaLegitima) huellaAnterior = huellaLegitima
   })
 
   const errores = incidencias.filter((x) => x.nivel === 'error').length

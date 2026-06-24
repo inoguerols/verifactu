@@ -76,3 +76,41 @@ test('fecha estructural pero imposible (32-13-2024) → fecha-formato (fix #3)',
   const informe = lint([malo])
   expect(informe.incidencias.some((x) => x.code === 'fecha-formato')).toBe(true)
 })
+
+test('RegistroAnterior con huella correcta pero identidad equivocada → encadenamiento-identidad (rev2 #2)', () => {
+  const r0 = alta('12345678/G33', '')
+  const r1 = alta('12345679/G33', r0.Huella!, r0)
+  const r1Malo = {
+    ...r1,
+    Encadenamiento: { RegistroAnterior: { IDEmisorFactura: '89890001K', NumSerieFactura: 'OTRA/SERIE', FechaExpedicionFactura: '01-01-2024', Huella: r0.Huella! } },
+  }
+  const informe = lint([r0, r1Malo])
+  expect(informe.incidencias.some((x) => x.code === 'encadenamiento-identidad')).toBe(true)
+})
+
+test('JSON sin Encadenamiento no rompe el linter (rev2 #3)', () => {
+  const r0 = alta('12345678/G33', '')
+  const sinEnc = { ...r0 } as Record<string, unknown>
+  delete sinEnc.Encadenamiento
+  expect(() => lint([sinEnc as unknown as RegistroAlta])).not.toThrow()
+  const informe = lint([sinEnc as unknown as RegistroAlta])
+  expect(informe.incidencias.some((x) => x.code === 'falta-encadenamiento')).toBe(true)
+})
+
+test('registro intermedio sin campos no ancla la cadena en su huella almacenada (rev2 #1)', () => {
+  const r0Sin = {
+    ...alta('12345678/G33', ''),
+    IDFactura: { IDEmisorFactura: '89890001K', NumSerieFactura: '', FechaExpedicionFactura: '01-01-2024' },
+    Huella: 'D'.repeat(64),
+  }
+  const r1 = alta('12345679/G33', '')
+  const r1Ok = {
+    ...r1,
+    Encadenamiento: { RegistroAnterior: { IDEmisorFactura: '89890001K', NumSerieFactura: '', FechaExpedicionFactura: '01-01-2024', Huella: '' } },
+  }
+  const informe = lint([r0Sin, r1Ok])
+  // r1 NO debe verse arrastrado por la huella 'D...' almacenada en r0
+  expect(
+    informe.incidencias.filter((x) => x.index === 1 && (x.code === 'cadena-rota' || x.code === 'encadenamiento-huella')),
+  ).toHaveLength(0)
+})

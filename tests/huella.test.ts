@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { cadenaAlta, computeHuellaAlta, encadenarAltas } from '../src/huella.js'
+import { cadenaAlta, cadenaAnulacion, computeHuellaAlta, encadenarAltas } from '../src/huella.js'
 
 // Vector oficial replicado (AEAT). La cadena exacta produce este SHA-256.
 const VECTOR = {
@@ -42,4 +42,18 @@ test('encadenamiento: el primer registro usa Huella vacía y el 2º la del 1º',
   // la 2ª huella depende de la 1ª (cadena)
   expect(huellas[1]).not.toBe(huellas[0])
   expect(huellas[1]).toMatch(/^[0-9A-F]{64}$/)
+})
+
+test('cadena canónica del registro de anulación (5 campos en orden)', () => {
+  expect(
+    cadenaAnulacion({
+      IDEmisorFacturaAnulada: '89890001K',
+      NumSerieFacturaAnulada: '12345678/G33',
+      FechaExpedicionFacturaAnulada: '01-01-2024',
+      huellaAnterior: '',
+      FechaHoraHusoGenRegistro: '2024-01-01T19:20:30+01:00',
+    }),
+  ).toBe(
+    'IDEmisorFacturaAnulada=89890001K&NumSerieFacturaAnulada=12345678/G33&FechaExpedicionFacturaAnulada=01-01-2024&Huella=&FechaHoraHusoGenRegistro=2024-01-01T19:20:30+01:00',
+  )
 })
