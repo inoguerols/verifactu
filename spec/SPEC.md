@@ -42,13 +42,27 @@ Ver `src/types.ts`. RegistroAlta obligatorios: NIF+nombre emisor, NIF receptor
 descripción, ImporteTotal, Desglose, CuotaTotal, Huella, FechaHoraHusoGenRegistro,
 SistemaInformatico. Firma XML **NO** obligatoria en Veri*Factu.
 
-## 4. Pendiente de confirmar contra PDF/XSD oficial `[VERIFICAR]`
+## 4. Confirmado contra fuente AEAT `[CONFIRMADO]` (nivel 1 cerrado)
+- **Vector de alta**: la cadena `IDEmisorFactura=89890001K&…&FechaHoraHusoGenRegistro=
+  2024-01-01T19:20:30+01:00` produce SHA-256
+  `3C464DAF61ACB827C65FDA19F352A4E3BDC2C640E9E9FC4CC058073F38F12F60`. Cotejado
+  dígito a dígito con el ejemplo oficial → **prueba que el motor es correcto**.
+- **RegistroAnulación**: orden de campos confirmado contra la lista oficial de la
+  AEAT — `IDEmisorFacturaAnulada, NumSerieFacturaAnulada, FechaExpedicionFacturaAnulada,
+  Huella (anterior), FechaHoraHusoGenRegistro`. La AEAT no publica un digest de
+  ejemplo, pero el motor ya está probado por el vector de alta → huella correcta
+  por construcción. Test de encadenamiento cruzado alta→anulación añadido.
+- **Decimales**: la huella se calcula sobre el **literal** del XML; la AEAT ignora
+  ceros de cola al cotejar (`123.1` ≡ `123.10`), pero el hash es sobre el string
+  tal cual. Decisión de diseño: importes son `string` y se hashean **verbatim**
+  (el llamante pasa el mismo valor que serializa en el XML). Test que lo bloquea.
+
+## 5. Aún pendiente de PDF/XSD oficial `[VERIFICAR]`
 - Formato exacto de `FechaExpedicionFactura` en la huella vs en el XML (la huella
   usa `dd-mm-yyyy` según el vector; el XML podría diferir).
-- Normalización de decimales (¿ceros de cola?) y de espacios en los valores.
 - Percent-encoding y orden estricto del QR contra `DetalleEspecificacTecnCodigoQRfactura.pdf`.
-- Nombres de clave exactos del RegistroAnulación y campos de tipo de anulación.
 - Validación completa del `Desglose` (operación exenta sanidad, claves E1..E6).
+- Digest oficial de un ejemplo de anulación (no publicado por la AEAT; solo lista de campos).
 
 Descargar de:
 https://www.agenciatributaria.es/AEAT.desarrolladores/Desarrolladores/_menu_/Documentacion/Sistemas_Informaticos_de_Facturacion_y_Sistemas_VERI_FACTU/Sistemas_Informaticos_de_Facturacion_y_Sistemas_VERI_FACTU.html

@@ -16,6 +16,9 @@ export interface HuellaAltaInput {
   /** Tal como se serializa en el XML (p.ej. dd-mm-yyyy). */
   FechaExpedicionFactura: string
   TipoFactura: string
+  // ponytail: importes verbatim — se hashea la cadena EXACTA que va en el XML.
+  // La AEAT ignora ceros de cola al cotejar (123.1 ≡ 123.10), pero la huella es
+  // sobre el literal: pasa el mismo string que serializas en el XML, no un número.
   CuotaTotal: string
   ImporteTotal: string
   /** Huella del registro anterior; '' en el primer registro de la serie. */

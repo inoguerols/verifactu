@@ -1,5 +1,11 @@
 import { expect, test } from 'vitest'
-import { cadenaAlta, cadenaAnulacion, computeHuellaAlta, encadenarAltas } from '../src/huella.js'
+import {
+  cadenaAlta,
+  cadenaAnulacion,
+  computeHuellaAlta,
+  computeHuellaAnulacion,
+  encadenarAltas,
+} from '../src/huella.js'
 
 // Vector oficial replicado (AEAT). La cadena exacta produce este SHA-256.
 const VECTOR = {
@@ -56,4 +62,33 @@ test('cadena canónica del registro de anulación (5 campos en orden)', () => {
   ).toBe(
     'IDEmisorFacturaAnulada=89890001K&NumSerieFacturaAnulada=12345678/G33&FechaExpedicionFacturaAnulada=01-01-2024&Huella=&FechaHoraHusoGenRegistro=2024-01-01T19:20:30+01:00',
   )
+})
+
+// Regla AEAT: el importe se hashea verbatim (la cadena es el literal del XML).
+// La librería NO debe reformatear decimales: 12.3 y 12.30 producen huellas
+// distintas, así que el llamante debe pasar el mismo string que va en el XML.
+test('importes verbatim: no se rellenan ni recortan ceros de cola', () => {
+  expect(cadenaAlta({ ...VECTOR, CuotaTotal: '12.3' })).toContain('CuotaTotal=12.3&')
+  expect(computeHuellaAlta({ ...VECTOR, CuotaTotal: '12.3' })).not.toBe(VECTOR_HASH)
+})
+
+// La cadena enlaza tipos distintos: una anulación incluye la huella del alta
+// anterior (requisito de encadenamiento "registro anterior de alta o anulación").
+test('encadenamiento cruzado: anulación incluye la huella del alta previa', () => {
+  const huellaAlta = computeHuellaAlta(VECTOR)
+  const huellaAnul = computeHuellaAnulacion({
+    IDEmisorFacturaAnulada: VECTOR.IDEmisorFactura,
+    NumSerieFacturaAnulada: VECTOR.NumSerieFactura,
+    FechaExpedicionFacturaAnulada: VECTOR.FechaExpedicionFactura,
+    huellaAnterior: huellaAlta,
+    FechaHoraHusoGenRegistro: '2024-01-01T19:20:35+01:00',
+  })
+  expect(cadenaAnulacion({
+    IDEmisorFacturaAnulada: VECTOR.IDEmisorFactura,
+    NumSerieFacturaAnulada: VECTOR.NumSerieFactura,
+    FechaExpedicionFacturaAnulada: VECTOR.FechaExpedicionFactura,
+    huellaAnterior: huellaAlta,
+    FechaHoraHusoGenRegistro: '2024-01-01T19:20:35+01:00',
+  })).toContain(`Huella=${huellaAlta}&`)
+  expect(huellaAnul).toMatch(/^[0-9A-F]{64}$/)
 })
