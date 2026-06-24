@@ -17,7 +17,8 @@
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "validate:xsd": "xmllint --noout --schema spec/xsd/SuministroLR.xsd"
   },
   "dependencies": {
     "fast-xml-parser": "^4.5.0",

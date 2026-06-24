@@ -41,9 +41,22 @@ export interface SistemaInformatico {
   NombreRazon: string
   NIF: string
   NombreSistemaInformatico: string
+  /** Id del sistema informático (máx 2 caracteres). */
   IdSistemaInformatico: string
   Version: string
   NumeroInstalacion: string
+  /** ¿El sistema solo puede operar como VeriFactu? 'S'|'N'. */
+  TipoUsoPosibleSoloVerifactu: 'S' | 'N'
+  /** ¿Permite multi-obligado tributario? 'S'|'N'. */
+  TipoUsoPosibleMultiOT: 'S' | 'N'
+  /** ¿Se está usando para varios obligados? 'S'|'N'. */
+  IndicadorMultiplesOT: 'S' | 'N'
+}
+
+/** Cabecera del envío: obligado a la emisión (ObligadoEmision). */
+export interface Cabecera {
+  NombreRazon: string
+  NIF: string
 }
 
 /** Registro de alta de una factura. */
