@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>verifactu — librería open source para VeriFactu (AEAT)</title>
+<meta name="description" content="Librería TypeScript libre (MIT) para VeriFactu: huella SHA-256 encadenada, QR de cotejo, verificador de cumplimiento, XML validado contra el XSD oficial y cliente SOAP. Sin APIs de pago." />
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#8b949e;--accent:#2f81f7;--ok:#3fb950;--err:#f85149;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{max-width:880px;margin:0 auto;padding:0 20px}
+  header{padding:64px 0 40px;text-align:center;border-bottom:1px solid var(--border)}
+  h1{font-size:2.6rem;margin:0 0 8px;letter-spacing:-1px}
+  h1 .star{color:var(--accent)}
+  .tag{color:var(--muted);font-size:1.15rem;margin:0 auto 24px;max-width:620px}
+  .badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+  .badge{background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:4px 12px;font-size:.85rem;color:var(--muted)}
+  .cta{display:inline-flex;gap:8px;align-items:center;background:var(--accent);color:#fff;padding:10px 20px;border-radius:8px;font-weight:600}
+  .cta.ghost{background:transparent;border:1px solid var(--border);color:var(--fg)}
+  h2{font-size:1.5rem;margin:48px 0 16px;padding-top:8px}
+  section{padding:8px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px}
+  .card h3{margin:0 0 6px;font-size:1.05rem}
+  .card p{margin:0;color:var(--muted);font-size:.95rem}
+  pre{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;overflow:auto;font-family:var(--mono);font-size:.85rem}
+  code{font-family:var(--mono)}
+  .play{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:22px;margin-top:8px}
+  .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+  input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--fg);padding:8px 10px;font-family:var(--mono);font-size:.9rem}
+  .out{margin-top:18px}
+  .out .lbl{font-size:.8rem;color:var(--muted);margin:14px 0 4px}
+  .val{font-family:var(--mono);font-size:.82rem;word-break:break-all;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px}
+  .huella{color:var(--ok)}
+  .qrbox{margin-top:16px;display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+  #qr{background:#fff;padding:10px;border-radius:8px;width:180px;height:180px}
+  .selftest{font-size:.85rem;margin-top:10px}
+  .ok{color:var(--ok)}.err{color:var(--err)}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  td,th{border:1px solid var(--border);padding:8px 10px;text-align:left}
+  th{color:var(--muted);font-weight:600}
+  footer{margin:64px 0 40px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:.9rem;text-align:center}
+  .note{background:rgba(47,129,247,.08);border:1px solid rgba(47,129,247,.3);border-radius:8px;padding:12px 14px;font-size:.9rem;color:var(--fg)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>veri<span class="star">*</span>factu</h1>
+  <p class="tag">Librería <strong>TypeScript libre (MIT)</strong> para integrar y <strong>verificar el cumplimiento</strong> de VeriFactu (AEAT). Independiente, sin APIs de pago.</p>
+  <div class="badges">
+    <span class="badge">SHA-256 encadenada</span>
+    <span class="badge">QR de cotejo</span>
+    <span class="badge">lint de cumplimiento</span>
+    <span class="badge">XML ✓ XSD oficial</span>
+    <span class="badge">cliente SOAP</span>
+  </div>
+  <div class="badges">
+    <a class="cta" href="https://github.com/inoguerols/verifactu">★ Ver en GitHub</a>
+    <a class="cta ghost" href="#probar">Pruébalo →</a>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<section>
+<h2>Qué es</h2>
+<p>VeriFactu es el reglamento antifraude (Ley 11/2021 · RD 1007/2023 · Orden HAC/1177/2024) que obliga a que el software de facturación garantice la <strong>inalterabilidad</strong> de los registros mediante una huella encadenada y un QR verificable por la AEAT. Entra en vigor el <strong>1-ene-2027</strong> (sociedades) y <strong>1-jul-2027</strong> (resto).</p>
+<p><code>verifactu</code> implementa ese núcleo de forma abierta para que cualquiera lo integre <em>y compruebe que cumple</em>.</p>
+</section>
+
+<section>
+<h2>Qué hace</h2>
+<div class="grid">
+  <div class="card"><h3>Huella encadenada</h3><p>SHA-256 canónica sobre los campos del registro + la huella anterior. Verificada dígito a dígito contra el vector oficial de la AEAT.</p></div>
+  <div class="card"><h3>QR de cotejo</h3><p>URL al servicio ValidarQR de la AEAT (pruebas/producción) con los 4 parámetros y formato exactos, nivel M.</p></div>
+  <div class="card"><h3>Verificador <code>lint</code></h3><p>Recalcula toda la cadena de una serie y detecta registros alterados, cadenas rotas y formatos inválidos. CLI y API.</p></div>
+  <div class="card"><h3>XML ✓ XSD oficial</h3><p>Genera el <code>RegFactuSistemaFacturacion</code> con el orden y namespaces correctos. Valida contra el <code>SuministroLR.xsd</code> oficial.</p></div>
+  <div class="card"><h3>Cliente SOAP</h3><p>Envía al web service de la AEAT por TLS mutuo con certificado (preproducción y producción).</p></div>
+  <div class="card"><h3>Skill de Claude</h3><p>Guía la integración en cualquier repo y ejecuta el verificador de cumplimiento.</p></div>
+</div>
+</section>
+
+<section>
+<h2>Instalar</h2>
+<pre><code>npm install verifactu</code></pre>
+<pre><code>import { computeHuellaAlta, qrUrl, lint, xmlRegistroAlta, enviar } from 'verifactu'
+
+// huella encadenada del registro de alta
+const huella = computeHuellaAlta({
+  IDEmisorFactura: '89890001K', NumSerieFactura: '12345678/G33',
+  FechaExpedicionFactura: '01-01-2024', TipoFactura: 'F1',
+  CuotaTotal: '12.35', ImporteTotal: '123.45',
+  huellaAnterior: '', FechaHoraHusoGenRegistro: '2024-01-01T19:20:30+01:00',
+})
+
+// verificar el cumplimiento de una serie
+const informe = lint(serie) // → { ok, incidencias[] }</code></pre>
+<p>O verifica una serie desde la terminal:</p>
+<pre><code>npx verifactu lint serie.json</code></pre>
+</section>
+
+<section id="probar">
+<h2>Pruébalo</h2>
+<p>Calcula la <strong>huella canónica</strong> y el <strong>QR de cotejo</strong> en tu navegador (con <code>crypto.subtle</code>, igual que la librería). Nada sale de tu equipo.</p>
+<div class="play">
+  <div class="fields">
+    <div><label>NIF emisor (IDEmisorFactura)</label><input id="nif" value="89890001K"></div>
+    <div><label>Nº serie (NumSerieFactura)</label><input id="serie" value="12345678/G33"></div>
+    <div><label>Fecha expedición (dd-mm-yyyy)</label><input id="fecha" value="01-01-2024"></div>
+    <div><label>Tipo factura</label><input id="tipo" value="F1"></div>
+    <div><label>Cuota total</label><input id="cuota" value="12.35"></div>
+    <div><label>Importe total</label><input id="importe" value="123.45"></div>
+    <div><label>Huella anterior (vacío = 1er registro)</label><input id="anterior" value=""></div>
+    <div><label>Fecha-hora generación (ISO con huso)</label><input id="fechahora" value="2024-01-01T19:20:30+01:00"></div>
+  </div>
+  <div class="out">
+    <div class="lbl">Cadena canónica (lo que se hashea)</div>
+    <div class="val" id="cadena"></div>
+    <div class="lbl">Huella · SHA-256 hex mayúsculas</div>
+    <div class="val huella" id="huella"></div>
+    <div class="selftest" id="selftest"></div>
+    <div class="qrbox">
+      <div id="qr"></div>
+      <div style="flex:1;min-width:220px">
+        <div class="lbl" style="margin-top:0">URL de cotejo AEAT (entorno pruebas)</div>
+        <div class="val"><a id="qrurl" href="#" target="_blank" rel="noopener"></a></div>
+        <p style="color:var(--muted);font-size:.85rem">Escanea el QR o abre la URL: el QR que imprimes en la factura lleva exactamente este enlace.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="note" style="margin-top:14px">El <strong>envío al web service</strong> de la AEAT necesita certificado (TLS mutuo) y no puede hacerse desde el navegador. Para eso usa el cliente <code>enviar()</code> en Node — ver el <a href="https://github.com/inoguerols/verifactu#readme">README</a>.</div>
+</section>
+
+<section>
+<h2>Verificar el cumplimiento</h2>
+<p>El <code>lint</code> recalcula la cadena completa y marca lo que la AEAT rechazaría. Ejemplo de salida sobre una serie con un registro manipulado:</p>
+<pre><code>$ npx verifactu lint serie-manipulada.json
+[error] #1 cadena-rota: La Huella no coincide con el recálculo (registro alterado)
+NO CUMPLE — 2 registros, 1 errores, 0 avisos</code></pre>
+<table>
+  <tr><th>Nivel</th><th>Qué prueba</th><th>Sin AEAT</th></tr>
+  <tr><td>Huella</td><td>Reproduce el vector oficial AEAT</td><td>✅</td></tr>
+  <tr><td>lint</td><td>Cadena intacta / registros sin alterar</td><td>✅</td></tr>
+  <tr><td>QR</td><td>URL y formato de cotejo correctos</td><td>✅</td></tr>
+  <tr><td>XML</td><td>Valida contra el XSD oficial</td><td>✅ (xmllint)</td></tr>
+  <tr><td>Web service</td><td>La AEAT acepta el envío</td><td>requiere certificado</td></tr>
+</table>
+</section>
+
+<footer>
+  <p><a href="https://github.com/inoguerols/verifactu">github.com/inoguerols/verifactu</a> · Licencia MIT · No es un servicio oficial de la AEAT.</p>
+</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+const VECTOR_HASH = '3C464DAF61ACB827C65FDA19F352A4E3BDC2C640E9E9FC4CC058073F38F12F60'
+const $ = id => document.getElementById(id)
+const ids = ['nif','serie','fecha','tipo','cuota','importe','anterior','fechahora']
+
+function cadenaAlta(v){
+  return `IDEmisorFactura=${v.nif}&NumSerieFactura=${v.serie}&FechaExpedicionFactura=${v.fecha}`+
+    `&TipoFactura=${v.tipo}&CuotaTotal=${v.cuota}&ImporteTotal=${v.importe}`+
+    `&Huella=${v.anterior}&FechaHoraHusoGenRegistro=${v.fechahora}`
+}
+async function sha256Upper(s){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase()
+}
+function qrUrl(v){
+  const qs = new URLSearchParams({nif:v.nif,numserie:v.serie,fecha:v.fecha,importe:v.importe})
+    .toString().replace(/\+/g,'%20')
+  return 'https://prewww2.aeat.es/wlpl/TIKE-CONT/ValidarQR?'+qs
+}
+
+let qr
+async function run(){
+  const v = Object.fromEntries(ids.map(i=>[i, $(i).value.trim()]))
+  const cad = cadenaAlta(v)
+  $('cadena').textContent = cad
+  const h = await sha256Upper(cad)
+  $('huella').textContent = h
+
+  // autotest contra el vector oficial de la AEAT
+  const test = await sha256Upper(cadenaAlta({
+    nif:'89890001K', serie:'12345678/G33', fecha:'01-01-2024', tipo:'F1',
+    cuota:'12.35', importe:'123.45', anterior:'', fechahora:'2024-01-01T19:20:30+01:00'}))
+  $('selftest').innerHTML = test===VECTOR_HASH
+    ? '<span class="ok">✓ autotest: coincide con el vector oficial de la AEAT</span>'
+    : '<span class="err">✗ autotest falló</span>'
+
+  const url = qrUrl(v)
+  $('qrurl').textContent = url; $('qrurl').href = url
+  $('qr').innerHTML = ''
+  qr = new QRCode($('qr'), {text:url, width:160, height:160, correctLevel:QRCode.CorrectLevel.M})
+}
+ids.forEach(i=>$(i).addEventListener('input', run))
+run()
+</script>
+</body>
+</html>
