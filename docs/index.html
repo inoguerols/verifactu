@@ -49,13 +49,16 @@
 <body>
 <header><div class="wrap">
   <h1>veri<span class="star">*</span>factu</h1>
-  <p class="tag">Librería <strong>TypeScript libre (MIT)</strong> para integrar y <strong>verificar el cumplimiento</strong> de VeriFactu (AEAT). Independiente, sin APIs de pago.</p>
+  <p class="tag">Librería <strong>TypeScript libre (MIT)</strong> para generar, firmar, enviar y <strong>verificar el cumplimiento</strong> de VeriFactu (AEAT). Independiente, sin APIs de pago.</p>
+  <p class="tag" style="margin-top:-12px"><span class="badge" style="background:rgba(63,185,80,.12);border-color:rgba(63,185,80,.4);color:var(--ok)">v1.0 · verificada end-to-end contra la AEAT</span></p>
   <div class="badges">
     <span class="badge">SHA-256 encadenada</span>
     <span class="badge">QR de cotejo</span>
     <span class="badge">lint de cumplimiento</span>
     <span class="badge">XML ✓ XSD oficial</span>
-    <span class="badge">cliente SOAP</span>
+    <span class="badge">SOAP TLS mutuo</span>
+    <span class="badge">lotes + consulta</span>
+    <span class="badge">firma XAdES</span>
   </div>
   <div class="badges">
     <a class="cta" href="https://github.com/inoguerols/verifactu">★ Ver en GitHub</a>
@@ -76,9 +79,10 @@
 <div class="grid">
   <div class="card"><h3>Huella encadenada</h3><p>SHA-256 canónica sobre los campos del registro + la huella anterior. Verificada dígito a dígito contra el vector oficial de la AEAT.</p></div>
   <div class="card"><h3>QR de cotejo</h3><p>URL al servicio ValidarQR de la AEAT (pruebas/producción) con los 4 parámetros y formato exactos, nivel M.</p></div>
-  <div class="card"><h3>Verificador <code>lint</code></h3><p>Recalcula toda la cadena de una serie y detecta registros alterados, cadenas rotas y formatos inválidos. CLI y API.</p></div>
-  <div class="card"><h3>XML ✓ XSD oficial</h3><p>Genera el <code>RegFactuSistemaFacturacion</code> con el orden y namespaces correctos. Valida contra el <code>SuministroLR.xsd</code> oficial.</p></div>
-  <div class="card"><h3>Cliente SOAP</h3><p>Envía al web service de la AEAT por TLS mutuo con certificado (preproducción y producción).</p></div>
+  <div class="card"><h3>Verificador <code>lint</code></h3><p>Cumplimiento completo: NIF con dígito de control, desglose de IVA, coherencia de importes, destinatarios, rectificativas y la cadena de huellas. CLI y API.</p></div>
+  <div class="card"><h3>XML ✓ XSD oficial</h3><p>Genera el <code>RegFactuSistemaFacturacion</code> (alta, anulación y lotes) con orden y namespaces correctos. Valida contra el <code>SuministroLR.xsd</code> oficial.</p></div>
+  <div class="card"><h3>Envío + consulta</h3><p>Remite al web service por TLS mutuo: registro único, <strong>lotes</strong> ≤1000 y <strong>series</strong> que se trocean solas. Más <strong>consulta</strong> de lo remitido.</p></div>
+  <div class="card"><h3>Firma XAdES</h3><p>Para el modo <strong>No Veri*Factu</strong>: firma enveloped del registro (XAdES) con tu certificado.</p></div>
   <div class="card"><h3>Skill de Claude</h3><p>Guía la integración en cualquier repo y ejecuta el verificador de cumplimiento.</p></div>
 </div>
 </section>
@@ -148,7 +152,7 @@ NO CUMPLE — 2 registros, 1 errores, 0 avisos</code></pre>
   <tr><td>lint</td><td>Cadena intacta / registros sin alterar</td><td>✅</td></tr>
   <tr><td>QR</td><td>URL y formato de cotejo correctos</td><td>✅</td></tr>
   <tr><td>XML</td><td>Valida contra el XSD oficial</td><td>✅ (xmllint)</td></tr>
-  <tr><td>Web service</td><td>La AEAT acepta el envío</td><td>requiere certificado</td></tr>
+  <tr><td>Web service</td><td>La AEAT acepta y registra el envío (CSV)</td><td>✅ (verificado en preproducción)</td></tr>
 </table>
 </section>
 
@@ -173,8 +177,9 @@ async function sha256Upper(s){
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase()
 }
 function qrUrl(v){
-  const qs = new URLSearchParams({nif:v.nif,numserie:v.serie,fecha:v.fecha,importe:v.importe})
-    .toString().replace(/\+/g,'%20')
+  // mismo encoding que la librería: orden fijo + encodeURIComponent (/ → %2F, espacio → %20)
+  const e = encodeURIComponent
+  const qs = `nif=${e(v.nif)}&numserie=${e(v.serie)}&fecha=${e(v.fecha)}&importe=${e(v.importe)}`
   return 'https://prewww2.aeat.es/wlpl/TIKE-CONT/ValidarQR?'+qs
 }
 
