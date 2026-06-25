@@ -1,0 +1,30 @@
+name: publish-mcp
+
+# Publica el subpaquete @inoguerols/verifactu-mcp en npm vía Trusted Publishing (OIDC).
+# Requiere configurar en npmjs.com el trusted publisher del paquete
+# @inoguerols/verifactu-mcp → repo inoguerols/verifactu, workflow publish-mcp.yml.
+# Dispara a mano (workflow_dispatch) o con un tag mcp-v*.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['mcp-v*']
+
+permissions:
+  contents: read
+  id-token: write # imprescindible para OIDC
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest # OIDC trusted publishing requiere npm >= 11.5
+      - run: npm ci
+      - run: npm publish --access public

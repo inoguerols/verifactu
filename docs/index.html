@@ -50,7 +50,7 @@
 <header><div class="wrap">
   <h1>veri<span class="star">*</span>factu</h1>
   <p class="tag">Librería <strong>TypeScript libre (MIT)</strong> para generar, firmar, enviar y <strong>verificar el cumplimiento</strong> de VeriFactu (AEAT). Independiente, sin APIs de pago.</p>
-  <p class="tag" style="margin-top:-12px"><span class="badge" style="background:rgba(63,185,80,.12);border-color:rgba(63,185,80,.4);color:var(--ok)">v1.0 · verificada end-to-end contra la AEAT</span></p>
+  <p class="tag" style="margin-top:-12px"><span class="badge" style="background:rgba(63,185,80,.12);border-color:rgba(63,185,80,.4);color:var(--ok)">v1.1 · verificada end-to-end contra la AEAT</span></p>
   <div class="badges">
     <span class="badge">SHA-256 encadenada</span>
     <span class="badge">QR de cotejo</span>
@@ -59,6 +59,8 @@
     <span class="badge">SOAP TLS mutuo</span>
     <span class="badge">lotes + consulta</span>
     <span class="badge">firma XAdES</span>
+    <span class="badge">helpers DX</span>
+    <span class="badge">servidor MCP</span>
   </div>
   <div class="badges">
     <a class="cta" href="https://github.com/inoguerols/verifactu">★ Ver en GitHub</a>
@@ -95,6 +97,8 @@
   <div class="card"><h3>XML ✓ XSD oficial</h3><p>Genera el <code>RegFactuSistemaFacturacion</code> (alta, anulación y lotes) con orden y namespaces correctos. Valida contra el <code>SuministroLR.xsd</code> oficial.</p></div>
   <div class="card"><h3>Envío + consulta</h3><p>Remite al web service por TLS mutuo: registro único, <strong>lotes</strong> ≤1000 y <strong>series</strong> que se trocean solas. Más <strong>consulta</strong> de lo remitido.</p></div>
   <div class="card"><h3>Firma XAdES</h3><p>Para el modo <strong>No Veri*Factu</strong>: firma enveloped del registro (XAdES) con tu certificado.</p></div>
+  <div class="card"><h3>Atajos DX</h3><p><code>crearAlta()</code> y <code>SerieManager</code> encadenan la serie solos y sellan la hora (evitan el error AEAT 2004). Persistencia en memoria o fichero.</p></div>
+  <div class="card"><h3>Servidor MCP</h3><p><code>@inoguerols/verifactu-mcp</code>: expone huella, lint, QR, validación de NIF y XML como herramientas para Claude y clientes MCP.</p></div>
   <div class="card"><h3>Skill de Claude</h3><p>Guía la integración en cualquier repo y ejecuta el verificador de cumplimiento.</p></div>
 </div>
 </section>

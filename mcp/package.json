@@ -5,6 +5,9 @@
   "type": "module",
   "license": "MIT",
   "author": "Ignacio Noguerol (inoguerols)",
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://github.com/inoguerols/verifactu",
   "repository": {
     "type": "git",
