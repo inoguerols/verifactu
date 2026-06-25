@@ -6,9 +6,9 @@ Sin dependencias de pago ni APIs de terceros: el núcleo es determinista y se
 ejecuta offline.
 
 > **Estado: v1.0 — completa y verificada end-to-end contra la AEAT.**
-> Una factura de prueba fue **registrada en el entorno de preproducción de la
-> AEAT** (respuesta `HTTP 200`, `AceptadoConErrores`, con su CSV) usando un
-> certificado de representante por TLS mutuo.
+> Una factura de prueba fue **aceptada y registrada en el entorno de
+> preproducción de la AEAT** (`HTTP 200`, con su CSV) usando un certificado de
+> representante por TLS mutuo.
 
 Soporta los **dos modos** del reglamento:
 
