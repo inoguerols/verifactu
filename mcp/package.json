@@ -21,7 +21,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/server.ts --format esm --dts --clean",
+    "build": "tsup",
     "prepare": "npm run build"
   },
   "dependencies": {
