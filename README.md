@@ -173,9 +173,11 @@ const registro = await serie.anadirAlta({
 // registro ya viene encadenado, con la hora actual y la Huella calculada.
 ```
 
-> **Servidor MCP:** en [`mcp/`](./mcp) (`@inoguerols/verifactu-mcp`) hay un servidor MCP
-> que expone la huella, el `lint`, el QR, la validación de NIF y la generación de XML
-> como herramientas para clientes MCP (Claude, etc.).
+> **Servidor MCP:** el paquete incluye el binario **`verifactu-mcp`** (servidor MCP por
+> stdio) que expone la huella, el `lint`, el QR, la validación de NIF y la generación de
+> XML como herramientas para Claude y otros clientes MCP. Alta en Claude Code:
+> `claude mcp add verifactu -- npx -y --package=@inoguerols/verifactu verifactu-mcp`
+> (Claude Desktop: `command` `npx`, `args` `["-y","--package=@inoguerols/verifactu","verifactu-mcp"]`).
 
 ## CLI
 
