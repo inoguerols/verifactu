@@ -1,11 +1,20 @@
 # verifactu
 
-Librería **TypeScript totalmente libre (MIT)** para integrar y **verificar el
-cumplimiento** de **VeriFactu** (AEAT) en cualquier desarrollo. Sin dependencias
-de pago ni APIs de terceros: el núcleo es determinista y se ejecuta offline.
+Librería **TypeScript totalmente libre (MIT)** para **generar, firmar, enviar y
+verificar el cumplimiento** de **VeriFactu** (AEAT) en cualquier desarrollo.
+Sin dependencias de pago ni APIs de terceros: el núcleo es determinista y se
+ejecuta offline.
 
-> Estado: **v0.1 (fase 1, en construcción)** — núcleo offline verificable.
-> Fase 2 (firma XAdES + envío SOAP al web service AEAT) más adelante.
+> **Estado: v1.0 — completa y verificada end-to-end contra la AEAT.**
+> Una factura de prueba fue **registrada en el entorno de preproducción de la
+> AEAT** (respuesta `HTTP 200`, `AceptadoConErrores`, con su CSV) usando un
+> certificado de representante por TLS mutuo.
+
+Soporta los **dos modos** del reglamento:
+
+- **Veri\*Factu** — remisión en tiempo real al web service de la AEAT con
+  **TLS mutuo** por certificado (la firma XML **no** es obligatoria).
+- **No Veri\*Factu** — registros conservados y **firmados con XAdES**.
 
 ## ¿Qué resuelve?
 
@@ -13,70 +22,181 @@ El reglamento VeriFactu (RD 1007/2023 + Orden HAC/1177/2024) obliga a que el
 software de facturación genere, por cada factura, un **registro encadenado por
 huella SHA-256**, con **código QR** de cotejo y leyenda. Esta librería:
 
-- **Construye** los registros de alta/anulación.
+- **Construye** los registros de alta/anulación y los serializa al **XML oficial**
+  (validado contra los XSD de la AEAT).
 - **Calcula la huella canónica** y **encadena** la serie (inalterabilidad).
-- **Genera el QR** (URL de cotejo AEAT + imagen) y la leyenda.
-- **Verifica el cumplimiento** (`verifactu lint`): comprueba campos, formato,
-  cadena de huellas intacta, QR y leyenda, y emite un informe.
+- **Genera el QR** de cotejo (URL AEAT + imagen SVG/PNG) y la leyenda.
+- **Verifica el cumplimiento** (`lint`): NIF con dígito de control, desglose de
+  IVA, coherencia de importes, destinatarios, rectificativas y cadena de huellas.
+- **Envía** al web service por TLS mutuo (registro único, **lotes** ≤1000 y
+  **series** que se trocean solas) y **consulta** los registros remitidos.
+- **Firma** con XAdES para el modo No Veri\*Factu.
 
 A diferencia de los MCP/SaaS existentes, es una **librería embebible**, en
 TypeScript, **independiente** y con **verificador de cumplimiento**.
 
 ## Instalación
 
-Desde GitHub (no requiere cuenta de npm; se compila al instalar):
-
 ```bash
-npm i github:inoguerols/verifactu
+npm i @inoguerols/verifactu        # cuando esté publicada en npm
+npm i github:inoguerols/verifactu  # desde GitHub (se compila al instalar)
 ```
 
-> Aún no está publicado en el registro de npm. Cuando lo esté: `npm i verifactu`.
+Node ≥ 18. ESM.
 
-## Uso
+## Uso (librería)
 
 ```ts
-import { computeHuellaAlta, encadenarAltas, qrUrl, qrSvg, lint } from 'verifactu'
+import {
+  computeHuellaAlta, qrSvg, lint, validarNif,
+  xmlRegistroAlta, xmlLote,
+  enviar, enviarSerie, consultar,
+  firmarRegistro,
+} from '@inoguerols/verifactu'
+import { readFileSync } from 'node:fs'
 
-// 1) Huella encadenada (la del registro anterior entra en el cálculo; '' en el 1º)
+const cabecera = { NombreRazon: 'CLINICA DEMO SL', NIF: 'B00000000' }
+
+// 1) Huella encadenada (la huella del registro anterior entra; '' en el 1º)
 const huella = computeHuellaAlta({
-  IDEmisorFactura: '89890001K',
-  NumSerieFactura: '12345678/G33',
-  FechaExpedicionFactura: '01-01-2024',
+  IDEmisorFactura: 'B00000000',
+  NumSerieFactura: 'A/100',
+  FechaExpedicionFactura: '10-06-2026', // dd-mm-yyyy
   TipoFactura: 'F1',
-  CuotaTotal: '12.35',
-  ImporteTotal: '123.45',
+  CuotaTotal: '21.00',
+  ImporteTotal: '121.00',
   huellaAnterior: '',
-  FechaHoraHusoGenRegistro: '2024-01-01T19:20:30+01:00',
+  FechaHoraHusoGenRegistro: '2026-06-10T12:00:00+02:00', // ISO 8601 con huso
 })
 
-// 2) QR de cotejo AEAT + leyenda
-const url = qrUrl({ nif: '89890001K', numserie: '12345678/G33', fecha: '01-01-2024', importe: '123.45' })
-const svg = await qrSvg({ nif: '89890001K', numserie: '12345678/G33', fecha: '01-01-2024', importe: '123.45' })
+// 2) Registro de alta completo
+const alta = {
+  IDVersion: '1.0',
+  IDFactura: { IDEmisorFactura: 'B00000000', NumSerieFactura: 'A/100', FechaExpedicionFactura: '10-06-2026' },
+  NombreRazonEmisor: 'CLINICA DEMO SL',
+  TipoFactura: 'F1',
+  DescripcionOperacion: 'Consulta',
+  Destinatarios: [{ NombreRazon: 'Cliente SL', NIF: '12345678Z' }], // F1 lo exige; F2 no
+  Desglose: [{
+    ClaveRegimen: '01', CalificacionOperacion: 'S1', TipoImpositivo: '21',
+    BaseImponibleOimporteNoSujeto: '100.00', CuotaRepercutida: '21.00',
+  }],
+  CuotaTotal: '21.00',
+  ImporteTotal: '121.00',
+  Encadenamiento: { PrimerRegistro: 'S' },
+  SistemaInformatico: {
+    NombreRazon: 'CLINICA DEMO SL', NIF: 'B00000000', NombreSistemaInformatico: 'mi-erp',
+    IdSistemaInformatico: '01', Version: '1.0', NumeroInstalacion: '0001',
+    TipoUsoPosibleSoloVerifactu: 'S', TipoUsoPosibleMultiOT: 'N', IndicadorMultiplesOT: 'N',
+  },
+  FechaHoraHusoGenRegistro: '2026-06-10T12:00:00+02:00',
+  TipoHuella: '01',
+  Huella: huella,
+} as const
 
-// 3) Verificar el cumplimiento de una serie de registros de alta
-const informe = lint(misRegistrosDeAlta) // { ok, errores, avisos, incidencias[] }
+// 3) Verificar el cumplimiento ANTES de enviar
+const informe = lint([alta]) // { ok, errores, avisos, incidencias[] }
+if (!informe.ok) throw new Error('no cumple: ' + JSON.stringify(informe.incidencias))
+
+// 4) QR de cotejo (SVG) + validación de NIF
+const svg = await qrSvg({ nif: 'B00000000', numserie: 'A/100', fecha: '10-06-2026', importe: '121.00' })
+validarNif('B00000000') // true (dígito de control DNI/NIE/CIF)
+
+// 5a) Modo Veri*Factu: serializar y remitir por TLS mutuo
+const xml = xmlRegistroAlta(alta, cabecera)
+const resp = await enviar(xml, {
+  entorno: 'pruebas', // 'produccion' para envío real
+  credencial: { pfx: readFileSync('cert.p12'), passphrase: '...' }, // o { cert, key } PEM
+})
+// resp = { httpStatus, estadoEnvio, csv, lineas[], raw }
+
+// Lote (≤1000) o serie grande (se trocea sola en envíos de 1000):
+const xmlMuchos = xmlLote(cabecera, [{ alta }])
+const respuestas = await enviarSerie(cabecera, [{ alta } /*, ...miles... */], { entorno: 'pruebas', credencial: { pfx: readFileSync('cert.p12') } })
+
+// 5b) Modo No Veri*Factu: firmar el registro con XAdES y conservarlo
+const xmlFirmado = await firmarRegistro(xml, { cert: readFileSync('cert.pem'), key: readFileSync('key.pem') })
+
+// 6) Consultar registros remitidos
+const r = await consultar(cabecera, { ejercicio: '2026', periodo: '06' }, { entorno: 'pruebas', credencial: { pfx: readFileSync('cert.p12') } })
 ```
 
-## Verificador (CLI)
+## CLI
 
 ```bash
-npx verifactu lint examples/serie-valida.json   # OK  (exit 0)
-npx verifactu lint examples/serie-manipulada.json # NO CUMPLE (exit 1, detecta cadena-rota)
+# Verificar el cumplimiento de una serie (exit 0 OK / 1 NO CUMPLE)
+verifactu lint examples/serie-valida.json
+
+# Remitir al web service AEAT (TLS mutuo). El JSON admite:
+#   { cabecera, alta } | { cabecera, anulacion } | { cabecera, registros:[ {alta}|{anulacion}, ... ] }
+# Lotes >1000 se trocean automáticamente. Sin --prod va a preproducción.
+verifactu enviar examples/envio-alta.json      --pfx cert.p12 --passphrase secreto
+verifactu enviar examples/envio-lote.json      --cert cert.pem --key key.pem --prod
+verifactu enviar examples/envio-anulacion.json --pfx cert.p12 --dry-run   # imprime el SOAP, no envía
+
+# Firmar un registro con XAdES (modo No Veri*Factu) — requiere PEM
+verifactu firmar examples/envio-alta.json --cert cert.pem --key key.pem
+
+# Consultar registros remitidos
+verifactu consultar examples/consulta.json --pfx cert.p12 --passphrase secreto
 ```
 
-La base técnica (formato canónico + vector oficial de prueba) está en
-[`spec/SPEC.md`](./spec/SPEC.md).
+Ejemplos en [`examples/`](./examples). Si falta la `Huella` en el JSON, el CLI la
+calcula a partir del encadenamiento.
 
+## Cómo probar contra la AEAT (preproducción)
+
+El **entorno de pruebas externas** no exige apoderamiento, así que vale un
+**certificado FNMT de persona física** (o de representante de la entidad).
+
+1. **Exporta el certificado a `.p12` con su clave privada.** En macOS: *Acceso a
+   Llaveros → Mis certificados →* tu certificado *→ Exportar… → formato `.p12`* y
+   ponle contraseña. (Para `firmar`/`--cert`/`--key` conviértelo a PEM con
+   `openssl pkcs12 -in cert.p12 -clcerts -nokeys -out cert.pem` y
+   `openssl pkcs12 -in cert.p12 -nocerts -nodes -out key.pem`.)
+2. **Prepara el `envio.json`** con **tu NIF real** en `cabecera.NIF` y en
+   `alta.IDFactura.IDEmisorFactura` (debe coincidir con el titular del
+   certificado). Deja `Huella` vacía (el CLI la calcula).
+3. **Envía a preproducción** (sin `--prod`):
+   ```bash
+   verifactu enviar envio.json --pfx cert.p12 --passphrase 'TU_CONTRASEÑA'
+   ```
+   Respuesta esperada: `EstadoEnvio: Correcto`/`ParcialmenteCorrecto` y un **CSV**.
+
+Dos detalles que la AEAT valida en preproducción (son de datos, no de la librería):
+
+- **NIF del destinatario**: debe existir en el censo de la AEAT (error `1239`). En
+  facturas F1 usa el NIF real del cliente; las **F2 simplificadas no llevan
+  destinatario**.
+- **`FechaHoraHusoGenRegistro`**: debe ser la **hora actual** de la AEAT
+  (±240 s; error `2004`). Séllala con `new Date().toISOString()` al emitir.
+
+## Cumplimiento: qué comprueba `lint`
+
+Formato y presencia de campos · **NIF con dígito de control** (DNI/NIE/CIF) ·
+`TipoFactura` válido (F1/F2/F3/R1–R5) · **destinatario obligatorio** salvo F2 o
+factura sin identificación · **desglose** (exactamente una de
+`CalificacionOperacion` S1/S2/N1/N2 u `OperacionExenta` E1–E8; S1 exige tipo y
+cuota) · **coherencia de importes** (suma de cuotas y base+cuota, como aviso) ·
+**rectificativas** (R1–R5 exigen `TipoRectificativa` y facturas rectificadas) ·
+**integridad de la cadena de huellas** (recálculo, detecta `cadena-rota`).
+Devuelve `{ ok, errores, avisos, incidencias[] }`; el CLI sale con código 1 si no cumple.
+
+La base técnica (formato canónico, vector oficial de prueba y fuentes AEAT) está
+en [`spec/SPEC.md`](./spec/SPEC.md). Playground online:
+<https://inoguerols.github.io/verifactu/>.
 
 ## Aviso legal
 
 Proyecto **comunitario e independiente**, **no oficial** ni avalado por la AEAT.
-No garantiza por sí mismo la aceptación por la Agencia Tributaria: contrasta
-siempre contra las especificaciones oficiales y el entorno de pruebas de la AEAT.
-Se entrega "tal cual", sin garantías (ver `LICENSE`).
+Se entrega "tal cual", sin garantías (ver `LICENSE`). Contrasta siempre contra
+las especificaciones oficiales y el entorno de pruebas de la AEAT.
 
-Fechas de obligatoriedad vigentes (RD-ley 15/2025): sociedades **1-ene-2027**,
-resto de obligados **1-jul-2027**.
+El cumplimiento está verificado a nivel de formato/huella/QR/XSD **y** end-to-end
+contra el **entorno de pruebas** de la AEAT. Para el **envío real en producción**
+de una sociedad necesitarás un **certificado de representante** o apoderamiento.
+Fechas de obligatoriedad (RD-ley 15/2025): sociedades **1-ene-2027**, resto de
+obligados **1-jul-2027**.
 
 ## Licencia
 

@@ -1,0 +1,77 @@
+{
+  "cabecera": { "NombreRazon": "Clínica Demo SL", "NIF": "89890001K" },
+  "registros": [
+    {
+      "alta": {
+        "IDVersion": "1.0",
+        "IDFactura": {
+          "IDEmisorFactura": "89890001K",
+          "NumSerieFactura": "A/100",
+          "FechaExpedicionFactura": "10-06-2026"
+        },
+        "NombreRazonEmisor": "Clínica Demo SL",
+        "TipoFactura": "F1",
+        "DescripcionOperacion": "Consulta y tratamiento",
+        "Destinatarios": [{ "NombreRazon": "Paciente Demo", "NIF": "12345678Z" }],
+        "Desglose": [
+          {
+            "ClaveRegimen": "01",
+            "CalificacionOperacion": "S1",
+            "TipoImpositivo": "21",
+            "BaseImponibleOimporteNoSujeto": "100.00",
+            "CuotaRepercutida": "21.00"
+          }
+        ],
+        "CuotaTotal": "21.00",
+        "ImporteTotal": "121.00",
+        "Encadenamiento": { "PrimerRegistro": "S" },
+        "SistemaInformatico": {
+          "NombreRazon": "Software Demo SL",
+          "NIF": "B00000000",
+          "NombreSistemaInformatico": "verifactu",
+          "IdSistemaInformatico": "01",
+          "Version": "1.0.0",
+          "NumeroInstalacion": "0001",
+          "TipoUsoPosibleSoloVerifactu": "S",
+          "TipoUsoPosibleMultiOT": "N",
+          "IndicadorMultiplesOT": "N"
+        },
+        "FechaHoraHusoGenRegistro": "2026-06-10T12:00:00+02:00",
+        "TipoHuella": "01",
+        "Huella": "60816981F65E387B68EEEC39C42B104DE6911DB4B762B5B3089F462D43817DAD"
+      }
+    },
+    {
+      "anulacion": {
+        "IDVersion": "1.0",
+        "IDFactura": {
+          "IDEmisorFactura": "89890001K",
+          "NumSerieFactura": "A/099",
+          "FechaExpedicionFactura": "09-06-2026"
+        },
+        "Encadenamiento": {
+          "RegistroAnterior": {
+            "IDEmisorFactura": "89890001K",
+            "NumSerieFactura": "A/100",
+            "FechaExpedicionFactura": "10-06-2026",
+            "Huella": "60816981F65E387B68EEEC39C42B104DE6911DB4B762B5B3089F462D43817DAD"
+          }
+        },
+        "SistemaInformatico": {
+          "NombreRazon": "Software Demo SL",
+          "NIF": "B00000000",
+          "NombreSistemaInformatico": "verifactu",
+          "IdSistemaInformatico": "01",
+          "Version": "1.0.0",
+          "NumeroInstalacion": "0001",
+          "TipoUsoPosibleSoloVerifactu": "S",
+          "TipoUsoPosibleMultiOT": "N",
+          "IndicadorMultiplesOT": "N"
+        },
+        "FechaHoraHusoGenRegistro": "2026-06-10T12:05:00+02:00",
+        "TipoHuella": "01",
+        "Huella": "7BA2E1E7B31E58F8B4520E49161B3EDD803884E2FECBBBFBEF5846C7A282F171"
+      }
+    }
+  ]
+}

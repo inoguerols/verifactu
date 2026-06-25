@@ -8,24 +8,38 @@
     },
     "NombreRazonEmisor": "ACME SL",
     "TipoFactura": "F1",
-    "DescripcionOperacion": "Servicios",
-    "Desglose": [],
-    "CuotaTotal": "12.35",
-    "ImporteTotal": "123.45",
+    "DescripcionOperacion": "Servicios de consultoría",
+    "Destinatarios": [
+      { "NombreRazon": "Cliente Demo SL", "NIF": "B00000000" }
+    ],
+    "Desglose": [
+      {
+        "ClaveRegimen": "01",
+        "CalificacionOperacion": "S1",
+        "TipoImpositivo": "21",
+        "BaseImponibleOimporteNoSujeto": "100.00",
+        "CuotaRepercutida": "21.00"
+      }
+    ],
+    "CuotaTotal": "21.00",
+    "ImporteTotal": "121.00",
     "Encadenamiento": {
       "PrimerRegistro": "S"
     },
     "SistemaInformatico": {
       "NombreRazon": "ACME SL",
-      "NIF": "B12345678",
+      "NIF": "B00000000",
       "NombreSistemaInformatico": "ACME Facturador",
       "IdSistemaInformatico": "01",
       "Version": "1.0",
-      "NumeroInstalacion": "001"
+      "NumeroInstalacion": "001",
+      "TipoUsoPosibleSoloVerifactu": "S",
+      "TipoUsoPosibleMultiOT": "N",
+      "IndicadorMultiplesOT": "N"
     },
     "FechaHoraHusoGenRegistro": "2024-01-01T19:20:30+01:00",
     "TipoHuella": "01",
-    "Huella": "3C464DAF61ACB827C65FDA19F352A4E3BDC2C640E9E9FC4CC058073F38F12F60"
+    "Huella": "6230953E0F5A4A97EFFB78D893FFF87134716F1B5B1941B3B0325FC3D07D9C26"
   },
   {
     "IDVersion": "1.0",
@@ -36,28 +50,42 @@
     },
     "NombreRazonEmisor": "ACME SL",
     "TipoFactura": "F1",
-    "DescripcionOperacion": "Servicios",
-    "Desglose": [],
-    "CuotaTotal": "12.35",
-    "ImporteTotal": "123.45",
+    "DescripcionOperacion": "Servicios de consultoría",
+    "Destinatarios": [
+      { "NombreRazon": "Cliente Demo SL", "NIF": "B00000000" }
+    ],
+    "Desglose": [
+      {
+        "ClaveRegimen": "01",
+        "CalificacionOperacion": "S1",
+        "TipoImpositivo": "21",
+        "BaseImponibleOimporteNoSujeto": "100.00",
+        "CuotaRepercutida": "21.00"
+      }
+    ],
+    "CuotaTotal": "21.00",
+    "ImporteTotal": "121.00",
     "Encadenamiento": {
       "RegistroAnterior": {
         "IDEmisorFactura": "89890001K",
         "NumSerieFactura": "12345678/G33",
         "FechaExpedicionFactura": "01-01-2024",
-        "Huella": "3C464DAF61ACB827C65FDA19F352A4E3BDC2C640E9E9FC4CC058073F38F12F60"
+        "Huella": "6230953E0F5A4A97EFFB78D893FFF87134716F1B5B1941B3B0325FC3D07D9C26"
       }
     },
     "SistemaInformatico": {
       "NombreRazon": "ACME SL",
-      "NIF": "B12345678",
+      "NIF": "B00000000",
       "NombreSistemaInformatico": "ACME Facturador",
       "IdSistemaInformatico": "01",
       "Version": "1.0",
-      "NumeroInstalacion": "001"
+      "NumeroInstalacion": "001",
+      "TipoUsoPosibleSoloVerifactu": "S",
+      "TipoUsoPosibleMultiOT": "N",
+      "IndicadorMultiplesOT": "N"
     },
     "FechaHoraHusoGenRegistro": "2024-01-01T19:20:30+01:00",
     "TipoHuella": "01",
-    "Huella": "8AA402B1A0B0917F6E4F309565C0736A2DC4E6E933E0E4B1207DFB4CE310F1FF"
+    "Huella": "968933A41AEFE484825463195B96CF0279B407A6670957E1896D04FDF9313BFE"
   }
 ]

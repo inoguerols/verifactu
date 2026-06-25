@@ -5,7 +5,7 @@ import type { Entorno } from './types.js'
 // Contenido = URL HTTPS al servicio de la AEAT con 4 parámetros URL-encoded.
 
 export const QR_ENDPOINTS: Record<Entorno, string> = {
-  produccion: 'https://www2.agenciatributaria.es/wlpl/TIKE-CONT/ValidarQR',
+  produccion: 'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR',
   pruebas: 'https://prewww2.aeat.es/wlpl/TIKE-CONT/ValidarQR',
 }
 
@@ -28,12 +28,14 @@ export interface QrParams {
 
 /** Construye la URL de cotejo con los 4 parámetros en orden y URL-encoded. */
 export function qrUrl(p: QrParams, entorno: Entorno = 'produccion'): string {
-  const qs = new URLSearchParams()
-  qs.set('nif', p.nif)
-  qs.set('numserie', p.numserie)
-  qs.set('fecha', p.fecha)
-  qs.set('importe', p.importe)
-  return `${QR_ENDPOINTS[entorno]}?${qs.toString()}`
+  // Orden fijo (nif, numserie, fecha, importe) y URL-encoding RFC 3986 sobre UTF-8:
+  // encodeURIComponent codifica '/'→%2F, ' '→%20, '&'→%26… (deja '.' intacto en importe).
+  const qs =
+    `nif=${encodeURIComponent(p.nif)}` +
+    `&numserie=${encodeURIComponent(p.numserie)}` +
+    `&fecha=${encodeURIComponent(p.fecha)}` +
+    `&importe=${encodeURIComponent(p.importe)}`
+  return `${QR_ENDPOINTS[entorno]}?${qs}`
 }
 
 /** PNG (data URL) del QR, nivel de corrección M, listo para incrustar. */

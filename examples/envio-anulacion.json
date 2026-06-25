@@ -1,0 +1,26 @@
+{
+  "cabecera": { "NombreRazon": "Clínica Demo SL", "NIF": "89890001K" },
+  "anulacion": {
+    "IDVersion": "1.0",
+    "IDFactura": {
+      "IDEmisorFactura": "89890001K",
+      "NumSerieFactura": "A/050",
+      "FechaExpedicionFactura": "01-06-2026"
+    },
+    "Encadenamiento": { "PrimerRegistro": "S" },
+    "SistemaInformatico": {
+      "NombreRazon": "Software Demo SL",
+      "NIF": "B00000000",
+      "NombreSistemaInformatico": "verifactu",
+      "IdSistemaInformatico": "01",
+      "Version": "1.0.0",
+      "NumeroInstalacion": "0001",
+      "TipoUsoPosibleSoloVerifactu": "S",
+      "TipoUsoPosibleMultiOT": "N",
+      "IndicadorMultiplesOT": "N"
+    },
+    "FechaHoraHusoGenRegistro": "2026-06-10T13:00:00+02:00",
+    "TipoHuella": "01",
+    "Huella": "61B12334B6A65C3215DAB271D72675C9F46E7490FB8508FC5FDA4061A75DBE88"
+  }
+}

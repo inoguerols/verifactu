@@ -1,6 +1,6 @@
 {
   "name": "@inoguerols/verifactu",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Librería TypeScript totalmente libre para VeriFactu (AEAT): registros, huella encadenada, QR y verificador de cumplimiento. Sin APIs de pago.",
   "type": "module",
   "license": "MIT",
@@ -45,12 +45,20 @@
     "validate:xsd": "xmllint --noout --schema spec/xsd/SuministroLR.xsd"
   },
   "dependencies": {
+    "@peculiar/webcrypto": "^1.7.1",
+    "@xmldom/xmldom": "^0.8.13",
     "fast-xml-parser": "^4.5.0",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "xadesjs": "^2.6.7",
+    "xml-core": "^1.2.5",
+    "xmldsigjs": "^2.8.7",
+    "xpath": "^0.0.34"
   },
   "devDependencies": {
+    "@peculiar/x509": "^2.0.0",
     "@types/node": "^22.10.0",
     "@types/qrcode": "^1.5.5",
+    "reflect-metadata": "^0.2.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

@@ -5,6 +5,7 @@
 import type {
   Cabecera,
   DesgloseItem,
+  Persona,
   RegistroAlta,
   RegistroAnulacion,
   SistemaInformatico,
@@ -73,17 +74,49 @@ function encadenamiento(e: RegistroAlta['Encadenamiento']): string {
   )
 }
 
-function idFactura(f: { IDEmisorFactura: string; NumSerieFactura: string; FechaExpedicionFactura: string }): string {
+function idFacturaAs(
+  wrapper: string,
+  f: { IDEmisorFactura: string; NumSerieFactura: string; FechaExpedicionFactura: string },
+): string {
   return (
-    `<sf:IDFactura>` +
+    `<sf:${wrapper}>` +
     el('IDEmisorFactura', f.IDEmisorFactura) +
     el('NumSerieFactura', f.NumSerieFactura) +
     el('FechaExpedicionFactura', f.FechaExpedicionFactura) +
+    `</sf:${wrapper}>`
+  )
+}
+
+function idFactura(f: { IDEmisorFactura: string; NumSerieFactura: string; FechaExpedicionFactura: string }): string {
+  return idFacturaAs('IDFactura', f)
+}
+
+// El IDFactura de una anulación usa los nombres de elemento con sufijo "Anulada"
+// (IDFacturaExpedidaBajaType del XSD).
+function idFacturaAnulada(f: { IDEmisorFactura: string; NumSerieFactura: string; FechaExpedicionFactura: string }): string {
+  return (
+    `<sf:IDFactura>` +
+    el('IDEmisorFacturaAnulada', f.IDEmisorFactura) +
+    el('NumSerieFacturaAnulada', f.NumSerieFactura) +
+    el('FechaExpedicionFacturaAnulada', f.FechaExpedicionFactura) +
     `</sf:IDFactura>`
   )
 }
 
-function envelope(cabecera: Cabecera, registro: string): string {
+/** Destinatario: NombreRazon + (NIF | IDOtro). */
+function destinatario(p: Persona): string {
+  const ident =
+    p.IDOtro !== undefined
+      ? `<sf:IDOtro>` +
+        el('CodigoPais', p.IDOtro.CodigoPais) +
+        el('IDType', p.IDOtro.IDType) +
+        el('ID', p.IDOtro.ID) +
+        `</sf:IDOtro>`
+      : el('NIF', p.NIF)
+  return `<sf:IDDestinatario>` + el('NombreRazon', p.NombreRazon) + ident + `</sf:IDDestinatario>`
+}
+
+function envelope(cabecera: Cabecera, registros: string[]): string {
   return (
     `<?xml version="1.0" encoding="UTF-8"?>` +
     `<sfLR:RegFactuSistemaFacturacion xmlns:sfLR="${NS_LR}" xmlns:sf="${NS_SF}">` +
@@ -91,21 +124,53 @@ function envelope(cabecera: Cabecera, registro: string): string {
     el('NombreRazon', cabecera.NombreRazon) +
     el('NIF', cabecera.NIF) +
     `</sf:ObligadoEmision></sfLR:Cabecera>` +
-    `<sfLR:RegistroFactura>${registro}</sfLR:RegistroFactura>` +
+    registros.map((r) => `<sfLR:RegistroFactura>${r}</sfLR:RegistroFactura>`).join('') +
     `</sfLR:RegFactuSistemaFacturacion>`
   )
 }
 
-/** XML de envío de un registro de ALTA (envoltorio RegFactu con un RegistroFactura). */
-// ponytail: un registro por envío. Lotes (hasta 1000) y firma ds:Signature, después.
-export function xmlRegistroAlta(r: RegistroAlta, cabecera: Cabecera): string {
-  const reg =
+/** Cuerpo `<sf:RegistroAlta>…</sf:RegistroAlta>` en orden XSD (RegistroFacturacionAltaType). */
+function regAltaInner(r: RegistroAlta): string {
+  const facturasRectificadas =
+    r.FacturasRectificadas !== undefined
+      ? `<sf:FacturasRectificadas>` +
+        r.FacturasRectificadas.map((f) => idFacturaAs('IDFacturaRectificada', f)).join('') +
+        `</sf:FacturasRectificadas>`
+      : ''
+  const facturasSustituidas =
+    r.FacturasSustituidas !== undefined
+      ? `<sf:FacturasSustituidas>` +
+        r.FacturasSustituidas.map((f) => idFacturaAs('IDFacturaSustituida', f)).join('') +
+        `</sf:FacturasSustituidas>`
+      : ''
+  const importeRectificacion =
+    r.ImporteRectificacion !== undefined
+      ? `<sf:ImporteRectificacion>` +
+        el('BaseRectificada', r.ImporteRectificacion.BaseRectificada) +
+        el('CuotaRectificada', r.ImporteRectificacion.CuotaRectificada) +
+        el('CuotaRecargoRectificado', r.ImporteRectificacion.CuotaRecargoRectificado) +
+        `</sf:ImporteRectificacion>`
+      : ''
+  const destinatarios =
+    r.Destinatarios !== undefined
+      ? `<sf:Destinatarios>` + r.Destinatarios.map(destinatario).join('') + `</sf:Destinatarios>`
+      : ''
+  return (
     `<sf:RegistroAlta>` +
     el('IDVersion', r.IDVersion) +
     idFactura(r.IDFactura) +
+    el('RefExterna', r.RefExterna) +
     el('NombreRazonEmisor', r.NombreRazonEmisor) +
     el('TipoFactura', r.TipoFactura) +
+    el('TipoRectificativa', r.TipoRectificativa) +
+    facturasRectificadas +
+    facturasSustituidas +
+    importeRectificacion +
+    el('FechaOperacion', r.FechaOperacion) +
     el('DescripcionOperacion', r.DescripcionOperacion) +
+    el('FacturaSimplificadaArt7273', r.FacturaSimplificadaArt7273) +
+    el('FacturaSinIdentifDestinatarioArt61d', r.FacturaSinIdentifDestinatarioArt61d) +
+    destinatarios +
     `<sf:Desglose>${r.Desglose.map(detalle).join('')}</sf:Desglose>` +
     el('CuotaTotal', r.CuotaTotal) +
     el('ImporteTotal', r.ImporteTotal) +
@@ -115,20 +180,47 @@ export function xmlRegistroAlta(r: RegistroAlta, cabecera: Cabecera): string {
     el('TipoHuella', r.TipoHuella) +
     el('Huella', r.Huella) +
     `</sf:RegistroAlta>`
-  return envelope(cabecera, reg)
+  )
 }
 
-/** XML de envío de un registro de ANULACIÓN. */
-export function xmlRegistroAnulacion(r: RegistroAnulacion, cabecera: Cabecera): string {
-  const reg =
+/** Cuerpo `<sf:RegistroAnulacion>…</sf:RegistroAnulacion>` en orden XSD. */
+function regAnulacionInner(r: RegistroAnulacion): string {
+  return (
     `<sf:RegistroAnulacion>` +
     el('IDVersion', r.IDVersion) +
-    idFactura(r.IDFactura) +
+    idFacturaAnulada(r.IDFactura) +
     encadenamiento(r.Encadenamiento) +
     sistemaInformatico(r.SistemaInformatico) +
     el('FechaHoraHusoGenRegistro', r.FechaHoraHusoGenRegistro) +
     el('TipoHuella', r.TipoHuella) +
     el('Huella', r.Huella) +
     `</sf:RegistroAnulacion>`
-  return envelope(cabecera, reg)
+  )
+}
+
+/** XML de envío de un registro de ALTA (envoltorio RegFactu con un RegistroFactura). */
+export function xmlRegistroAlta(r: RegistroAlta, cabecera: Cabecera): string {
+  return envelope(cabecera, [regAltaInner(r)])
+}
+
+/** XML de envío de un registro de ANULACIÓN. */
+export function xmlRegistroAnulacion(r: RegistroAnulacion, cabecera: Cabecera): string {
+  return envelope(cabecera, [regAnulacionInner(r)])
+}
+
+/**
+ * XML de un LOTE: varios registros (alta y/o anulación) en un mismo envío.
+ * AEAT admite hasta 1000 registros por envío (XSD maxOccurs=1000).
+ */
+export function xmlLote(
+  cabecera: Cabecera,
+  items: Array<{ alta: RegistroAlta } | { anulacion: RegistroAnulacion }>,
+): string {
+  if (items.length === 0 || items.length > 1000) {
+    throw new Error(`Lote VeriFactu: ${items.length} registros (debe ser 1-1000)`)
+  }
+  const registros = items.map((it) =>
+    'alta' in it ? regAltaInner(it.alta) : regAnulacionInner(it.anulacion),
+  )
+  return envelope(cabecera, registros)
 }
