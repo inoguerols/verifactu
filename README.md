@@ -1,5 +1,9 @@
 # verifactu
 
+[![npm](https://img.shields.io/npm/v/@inoguerols/verifactu)](https://www.npmjs.com/package/@inoguerols/verifactu)
+[![ci](https://github.com/inoguerols/verifactu/actions/workflows/ci.yml/badge.svg)](https://github.com/inoguerols/verifactu/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+
 Librería **TypeScript totalmente libre (MIT)** para **generar, firmar, enviar y
 verificar el cumplimiento** de **VeriFactu** (AEAT) en cualquier desarrollo.
 Sin dependencias de pago ni APIs de terceros: el núcleo es determinista y se
@@ -148,6 +152,30 @@ const xmlFirmado = await firmarRegistro(xml, { cert: readFileSync('cert.pem'), k
 // 6) Consultar registros remitidos
 const r = await consultar(cabecera, { ejercicio: '2026', periodo: '06' }, { entorno: 'pruebas', credencial: { pfx: readFileSync('cert.p12') } })
 ```
+
+### Atajos de alto nivel
+
+Para no encadenar huellas ni sellar la hora a mano, usa `crearAlta` y `SerieManager`
+(persiste la última huella y **encadena solo**, sellando `FechaHoraHusoGenRegistro = ahora`,
+lo que evita el error AEAT 2004):
+
+```ts
+import { SerieManager, FicheroStore } from '@inoguerols/verifactu'
+
+const serie = new SerieManager({ serie: 'A', store: new FicheroStore('.verifactu.json') })
+const registro = await serie.anadirAlta({
+  IDEmisorFactura: 'B00000000', NumSerieFactura: 'A/100',
+  NombreRazonEmisor: 'CLINICA DEMO SL', DescripcionOperacion: 'Consulta',
+  Destinatarios: [{ NombreRazon: 'Cliente SL', NIF: '12345678Z' }],
+  Desglose: [{ CalificacionOperacion: 'S1', TipoImpositivo: '21', BaseImponibleOimporteNoSujeto: '100.00', CuotaRepercutida: '21.00' }],
+  CuotaTotal: '21.00', ImporteTotal: '121.00', SistemaInformatico,
+})
+// registro ya viene encadenado, con la hora actual y la Huella calculada.
+```
+
+> **Servidor MCP:** en [`mcp/`](./mcp) (`@inoguerols/verifactu-mcp`) hay un servidor MCP
+> que expone la huella, el `lint`, el QR, la validación de NIF y la generación de XML
+> como herramientas para clientes MCP (Claude, etc.).
 
 ## CLI
 

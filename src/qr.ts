@@ -47,3 +47,24 @@ export function qrDataUrl(p: QrParams, entorno: Entorno = 'produccion'): Promise
 export function qrSvg(p: QrParams, entorno: Entorno = 'produccion'): Promise<string> {
   return QRCode.toString(qrUrl(p, entorno), { type: 'svg', errorCorrectionLevel: 'M', margin: 2 })
 }
+
+/**
+ * SVG del QR con la leyenda "VERI*FACTU" debajo, listo para incrustar en factura.
+ * Extiende el viewBox del SVG generado y añade un <text> al pie.
+ */
+export async function qrFacturaSvg(p: QrParams, entorno: Entorno = 'produccion'): Promise<string> {
+  const svg = await qrSvg(p, entorno)
+  const m = /viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/.exec(svg)
+  const wStr = m?.[1] ?? '256'
+  const hStr = m?.[2] ?? '256'
+  const w = Number(wStr)
+  const h = Number(hStr)
+  const labelH = 14
+  const newH = h + 4 + labelH
+  return svg
+    .replace(`viewBox="0 0 ${wStr} ${hStr}"`, `viewBox="0 0 ${w} ${newH}"`)
+    .replace(
+      '</svg>',
+      `<text x="${w / 2}" y="${newH - 2}" text-anchor="middle" font-size="${labelH}" font-family="sans-serif" fill="#000">${LEYENDA.verifactu}</text></svg>`,
+    )
+}

@@ -4,7 +4,7 @@
     "IDFactura": {
       "IDEmisorFactura": "89890001K",
       "NumSerieFactura": "12345678/G33",
-      "FechaExpedicionFactura": "01-01-2024"
+      "FechaExpedicionFactura": "02-01-2025"
     },
     "NombreRazonEmisor": "ACME SL",
     "TipoFactura": "F1",
@@ -37,16 +37,16 @@
       "TipoUsoPosibleMultiOT": "N",
       "IndicadorMultiplesOT": "N"
     },
-    "FechaHoraHusoGenRegistro": "2024-01-01T19:20:30+01:00",
+    "FechaHoraHusoGenRegistro": "2025-01-02T19:20:30+01:00",
     "TipoHuella": "01",
-    "Huella": "6230953E0F5A4A97EFFB78D893FFF87134716F1B5B1941B3B0325FC3D07D9C26"
+    "Huella": "317EDA454D09BB475B2B07B90DFB9E73773DC65CFC6F6581F7A1953EA7E59A78"
   },
   {
     "IDVersion": "1.0",
     "IDFactura": {
       "IDEmisorFactura": "89890001K",
       "NumSerieFactura": "12345679/G33",
-      "FechaExpedicionFactura": "01-01-2024"
+      "FechaExpedicionFactura": "02-01-2025"
     },
     "NombreRazonEmisor": "ACME SL",
     "TipoFactura": "F1",
@@ -69,8 +69,8 @@
       "RegistroAnterior": {
         "IDEmisorFactura": "89890001K",
         "NumSerieFactura": "12345678/G33",
-        "FechaExpedicionFactura": "01-01-2024",
-        "Huella": "6230953E0F5A4A97EFFB78D893FFF87134716F1B5B1941B3B0325FC3D07D9C26"
+        "FechaExpedicionFactura": "02-01-2025",
+        "Huella": "317EDA454D09BB475B2B07B90DFB9E73773DC65CFC6F6581F7A1953EA7E59A78"
       }
     },
     "SistemaInformatico": {
@@ -84,8 +84,8 @@
       "TipoUsoPosibleMultiOT": "N",
       "IndicadorMultiplesOT": "N"
     },
-    "FechaHoraHusoGenRegistro": "2024-01-01T19:20:30+01:00",
+    "FechaHoraHusoGenRegistro": "2025-01-02T19:20:30+01:00",
     "TipoHuella": "01",
-    "Huella": "968933A41AEFE484825463195B96CF0279B407A6670957E1896D04FDF9313BFE"
+    "Huella": "7082138E38ADE0A1294ECB3AD8B38D3D341B404D16502BACC0204CA3CF3D1BB8"
   }
 ]

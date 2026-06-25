@@ -1,6 +1,6 @@
 {
   "name": "@inoguerols/verifactu",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Librería TypeScript totalmente libre para VeriFactu (AEAT): registros, huella encadenada, QR y verificador de cumplimiento. Sin APIs de pago.",
   "type": "module",
   "license": "MIT",

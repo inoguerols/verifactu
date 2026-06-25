@@ -10,7 +10,7 @@ const SIF = {
 }
 
 function alta(num: string, huellaAnterior: string, prev?: RegistroAlta): RegistroAlta {
-  const IDFactura = { IDEmisorFactura: '89890001K', NumSerieFactura: num, FechaExpedicionFactura: '01-01-2024' }
+  const IDFactura = { IDEmisorFactura: '89890001K', NumSerieFactura: num, FechaExpedicionFactura: '02-01-2025' }
   const base = {
     IDVersion: '1.0', IDFactura, NombreRazonEmisor: 'ACME SL', TipoFactura: 'F1' as const,
     DescripcionOperacion: 'Servicios',

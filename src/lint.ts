@@ -40,6 +40,14 @@ const RE_ISO_HUSO =
 const num = (s?: string): number => (s == null || s === '' ? Number.NaN : Number(s))
 const cerca = (a: number, b: number, tol: number): boolean => Math.abs(a - b) <= tol + 1e-9
 
+const IMPUESTOS = new Set(['01', '02', '03', '05']) // IVA, IPSI, IGIC, otros (AEAT 1218)
+const FECHA_MINIMA = Date.UTC(2024, 9, 28) // 28-10-2024: fecha de expedición mínima (AEAT 1152)
+// dd-mm-yyyy → epoch UTC (o null si no parsea); para comparar rangos de fecha.
+function fechaEpoch(s?: string): number | null {
+  const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s ?? '')
+  return m ? Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : null
+}
+
 type Add = (index: number, nivel: Nivel, code: string, message: string) => void
 
 function nuevoInforme(incidencias: Incidencia[], total: number): InformeCumplimiento {
@@ -52,10 +60,18 @@ function checkPersona(p: Persona, i: number, add: Add, etiqueta: string): void {
   if (!p?.NombreRazon) add(i, 'error', 'persona-nombre', `${etiqueta} sin NombreRazon`)
   const tieneNif = !!p?.NIF
   const tieneOtro = !!p?.IDOtro
-  if (tieneNif === tieneOtro)
+  if (tieneNif === tieneOtro) {
     add(i, 'error', 'persona-id', `${etiqueta} requiere exactamente uno de NIF o IDOtro`)
-  else if (tieneNif && !validarNif(p.NIF as string))
+  } else if (tieneNif && !validarNif(p.NIF as string)) {
     add(i, 'error', 'persona-nif', `${etiqueta} con NIF de dígito de control inválido: "${p.NIF}"`)
+  } else if (tieneOtro) {
+    const o = p.IDOtro as { CodigoPais?: string; IDType: string; ID: string }
+    if (!o.IDType) add(i, 'error', 'idotro-tipo', `${etiqueta}.IDOtro requiere IDType (AEAT 1102)`)
+    if (!o.ID) add(i, 'error', 'idotro-id', `${etiqueta}.IDOtro requiere ID (AEAT 1103)`)
+    // CodigoPais obligatorio salvo NIF-IVA (IDType 02). AEAT 1111.
+    if (o.IDType !== '02' && !o.CodigoPais)
+      add(i, 'error', 'idotro-pais', `${etiqueta}.IDOtro requiere CodigoPais si IDType≠02 (AEAT 1111)`)
+  }
 }
 
 function checkDestinatarios(r: RegistroAlta, i: number, add: Add): void {
@@ -67,9 +83,12 @@ function checkDestinatarios(r: RegistroAlta, i: number, add: Add): void {
   const ds = r.Destinatarios
   if (!ds || ds.length === 0) {
     if (!exime)
-      add(i, 'error', 'falta-destinatario', `TipoFactura ${r.TipoFactura} requiere Destinatarios`)
+      add(i, 'error', 'falta-destinatario', `TipoFactura ${r.TipoFactura} requiere Destinatarios (AEAT 1189)`)
     return
   }
+  // F2 simplificada y R5 (rectificativa de simplificada) NO deben llevar destinatario. AEAT 1190.
+  if (r.TipoFactura === 'F2' || r.TipoFactura === 'R5')
+    add(i, 'error', 'destinatario-no-permitido', `TipoFactura ${r.TipoFactura} no debe informar Destinatarios (AEAT 1190)`)
   ds.forEach((p) => checkPersona(p, i, add, 'Destinatario'))
 }
 
@@ -97,6 +116,8 @@ function checkDesglose(
   }
   if (d.length > 12) add(i, 'error', 'desglose-max', 'Desglose admite como máximo 12 detalles')
   for (const det of d) {
+    if (det.Impuesto != null && !IMPUESTOS.has(det.Impuesto))
+      add(i, 'error', 'impuesto-codigo', `Impuesto inválido (01/02/03/05) (AEAT 1218): "${det.Impuesto}"`)
     const tieneCal = det.CalificacionOperacion != null
     const tieneEx = det.OperacionExenta != null
     if (tieneCal === tieneEx)
@@ -139,13 +160,23 @@ function checkDesglose(
 /** Comprobaciones de campo/formato/negocio de un registro de alta (sin cadena). */
 function checkCamposAlta(r: RegistroAlta, i: number, add: Add): void {
   const f = r.IDFactura
+  if (r.IDVersion !== '1.0') add(i, 'error', 'idversion', `IDVersion debe ser '1.0' (AEAT 1251): "${r.IDVersion}"`)
   if (!f?.IDEmisorFactura) add(i, 'error', 'falta-nif-emisor', 'Falta IDEmisorFactura')
   else if (!validarNif(f.IDEmisorFactura))
     add(i, 'error', 'nif-emisor', `IDEmisorFactura no es un NIF válido (dígito de control): "${f.IDEmisorFactura}"`)
   if (!f?.NumSerieFactura) add(i, 'error', 'falta-numserie', 'Falta NumSerieFactura')
-  if (!f?.FechaExpedicionFactura) add(i, 'error', 'falta-fecha', 'Falta FechaExpedicionFactura')
-  else if (!RE_FECHA.test(f.FechaExpedicionFactura))
+  if (!f?.FechaExpedicionFactura) {
+    add(i, 'error', 'falta-fecha', 'Falta FechaExpedicionFactura')
+  } else if (!RE_FECHA.test(f.FechaExpedicionFactura)) {
     add(i, 'error', 'fecha-formato', `FechaExpedicionFactura debe ser dd-mm-yyyy válida: "${f.FechaExpedicionFactura}"`)
+  } else {
+    const fe = fechaEpoch(f.FechaExpedicionFactura)
+    if (fe !== null) {
+      if (fe > Date.now()) add(i, 'error', 'fecha-futura', 'FechaExpedicionFactura no puede ser futura (AEAT 1112)')
+      // El vector oficial AEAT usa 01-01-2024 (anterior al mínimo) → aviso, no error.
+      if (fe < FECHA_MINIMA) add(i, 'warn', 'fecha-minima', 'FechaExpedicionFactura anterior al 28-10-2024 (AEAT 1152)')
+    }
+  }
   if (!TIPOS_FACTURA.has(r.TipoFactura)) add(i, 'error', 'tipo-factura', `TipoFactura inválido: "${r.TipoFactura}"`)
   if (!RE_IMPORTE.test(r.ImporteTotal)) add(i, 'error', 'importe-formato', `ImporteTotal inválido: "${r.ImporteTotal}"`)
   if (!RE_IMPORTE.test(r.CuotaTotal)) add(i, 'error', 'cuota-formato', `CuotaTotal inválido: "${r.CuotaTotal}"`)

@@ -1,0 +1,35 @@
+{
+  "name": "@inoguerols/verifactu-mcp",
+  "version": "1.0.0",
+  "description": "Servidor MCP que expone la librería @inoguerols/verifactu como tools para Claude y clientes MCP.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Ignacio Noguerol (inoguerols)",
+  "homepage": "https://github.com/inoguerols/verifactu",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inoguerols/verifactu.git",
+    "directory": "mcp"
+  },
+  "bin": {
+    "verifactu-mcp": "dist/server.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/server.ts --format esm --dts --clean",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@inoguerols/verifactu": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "tsup": "^8.3.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
