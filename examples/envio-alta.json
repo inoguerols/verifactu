@@ -10,6 +10,7 @@
     "NombreRazonEmisor": "Clínica Demo SL",
     "TipoFactura": "F1",
     "DescripcionOperacion": "Servicio dental",
+    "Destinatarios": [{ "NombreRazon": "Paciente Demo", "NIF": "12345678Z" }],
     "Desglose": [
       {
         "ClaveRegimen": "01",

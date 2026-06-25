@@ -3,7 +3,8 @@
 // En modo VERI*FACTU la autenticación es el certificado de cliente (no XAdES).
 import { request } from 'node:https'
 import { XMLParser } from 'fast-xml-parser'
-import type { Entorno } from './types.js'
+import type { Cabecera, Entorno, RegistroAlta, RegistroAnulacion } from './types.js'
+import { xmlLote } from './xml.js'
 
 /** Endpoints del servicio de remisión de registros (VerifactuSOAP). */
 export const SOAP_ENDPOINTS: Record<Entorno, string> = {
@@ -116,6 +117,126 @@ export async function enviar(regFactuXml: string, opts: EnvioOpts): Promise<Resp
         res.setEncoding('utf8')
         res.on('data', (c) => (data += c))
         res.on('end', () => resolve(parseRespuesta(data, res.statusCode ?? 0)))
+      },
+    )
+    req.on('error', reject)
+    req.write(payload)
+    req.end()
+  })
+}
+
+/** Un registro a remitir: alta o anulación. */
+export type RegistroEnvio = { alta: RegistroAlta } | { anulacion: RegistroAnulacion }
+
+/** Trocea un array en lotes de tamaño <= n (por defecto 1000, el máx. AEAT por envío). */
+export function trocear<T>(xs: T[], n = 1000): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n))
+  return out
+}
+
+/**
+ * Remite una serie de registros troceándola en lotes de <=1000 y enviándolos en secuencia.
+ * Devuelve una RespuestaEnvio por lote.
+ */
+// ponytail: secuencial sin espera entre envíos (vale en local/dry). Un volcado masivo real
+// debe respetar el tiempo de espera (TiempoEsperaEnvio, inicial 60s) que la AEAT devuelve.
+export async function enviarSerie(
+  cabecera: Cabecera,
+  registros: RegistroEnvio[],
+  opts: EnvioOpts,
+): Promise<RespuestaEnvio[]> {
+  const respuestas: RespuestaEnvio[] = []
+  for (const lote of trocear(registros)) {
+    respuestas.push(await enviar(xmlLote(cabecera, lote), opts))
+  }
+  return respuestas
+}
+
+const NS_CONS_LR =
+  'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/ConsultaLR.xsd'
+const NS_CONS_SF =
+  'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/ConsultaInformacion.xsd'
+
+function escXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+function elc(name: string, value: string | undefined): string {
+  return value === undefined ? '' : `<sfc:${name}>${escXml(value)}</sfc:${name}>`
+}
+
+/** Filtro de la operación de consulta `ConsultaFactuSistemaFacturacion`. */
+export interface ConsultaFiltro {
+  ejercicio: string
+  periodo?: string
+  NIFEmisor?: string
+  numSerieFactura?: string
+  /** Clave para continuar una respuesta paginada (IndicadorPaginacion="S"). */
+  clavePaginacion?: { IDEmisorFactura: string; NumSerieFactura: string; FechaExpedicionFactura: string }
+}
+
+/** XML de la operación de consulta (schema ConsultaLR.xsd) envuelto en RegFactu de consulta. */
+export function consultaXml(cabecera: Cabecera, f: ConsultaFiltro): string {
+  const periodoImputacion =
+    `<con:PeriodoImputacion>` +
+    elc('Ejercicio', f.ejercicio) +
+    elc('Periodo', f.periodo) +
+    `</con:PeriodoImputacion>`
+  const clave = f.clavePaginacion
+    ? `<con:ClavePaginacion>` +
+      elc('IDEmisorFactura', f.clavePaginacion.IDEmisorFactura) +
+      elc('NumSerieFactura', f.clavePaginacion.NumSerieFactura) +
+      elc('FechaExpedicionFactura', f.clavePaginacion.FechaExpedicionFactura) +
+      `</con:ClavePaginacion>`
+    : ''
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<con:ConsultaFactuSistemaFacturacion xmlns:con="${NS_CONS_LR}" xmlns:sfc="${NS_CONS_SF}">` +
+    `<con:Cabecera><sfc:ObligadoEmision>` +
+    elc('NombreRazon', cabecera.NombreRazon) +
+    elc('NIF', cabecera.NIF) +
+    `</sfc:ObligadoEmision></con:Cabecera>` +
+    `<con:FiltroConsulta>` +
+    periodoImputacion +
+    elc('NIFEmisor', f.NIFEmisor) +
+    elc('NumSerieFactura', f.numSerieFactura) +
+    clave +
+    `</con:FiltroConsulta>` +
+    `</con:ConsultaFactuSistemaFacturacion>`
+  )
+}
+
+/**
+ * Lanza una consulta de registros (TLS mutuo) sobre el mismo servicio SistemaFacturacion.
+ * Devuelve la respuesta cruda; el parseo completo (paginación) queda fuera de alcance.
+ */
+// ponytail: respuestas paginan con IndicadorPaginacion="S" + ClavePaginacion (máx 10000);
+// reenviar consultaXml con f.clavePaginacion para la siguiente página cuando haga falta.
+export async function consultar(
+  cabecera: Cabecera,
+  f: ConsultaFiltro,
+  opts: EnvioOpts,
+): Promise<{ httpStatus: number; raw: string }> {
+  const url = new URL(SOAP_ENDPOINTS[opts.entorno ?? 'pruebas'])
+  const payload = Buffer.from(soapEnvelope(consultaXml(cabecera, f)), 'utf8')
+  return new Promise((resolve, reject) => {
+    const req = request(
+      {
+        host: url.hostname,
+        path: url.pathname,
+        method: 'POST',
+        ...opts.credencial,
+        headers: {
+          'Content-Type': 'text/xml; charset=utf-8',
+          SOAPAction: '""',
+          'Content-Length': payload.length,
+        },
+      },
+      (res) => {
+        let data = ''
+        res.setEncoding('utf8')
+        res.on('data', (c) => (data += c))
+        res.on('end', () => resolve({ httpStatus: res.statusCode ?? 0, raw: data }))
       },
     )
     req.on('error', reject)
