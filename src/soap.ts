@@ -191,7 +191,7 @@ export function consultaXml(cabecera: Cabecera, f: ConsultaFiltro): string {
     : ''
   return (
     `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<con:ConsultaFactuSistemaFacturacion xmlns:con="${NS_CONS_LR}" xmlns:sfc="${NS_CONS_SF}">` +
+    `<con:ConsultaFactuSistemaFacturacion IDVersion="1.0" xmlns:con="${NS_CONS_LR}" xmlns:sfc="${NS_CONS_SF}">` +
     `<con:Cabecera><sfc:ObligadoEmision>` +
     elc('NombreRazon', cabecera.NombreRazon) +
     elc('NIF', cabecera.NIF) +
@@ -216,7 +216,7 @@ export async function consultar(
   cabecera: Cabecera,
   f: ConsultaFiltro,
   opts: EnvioOpts,
-): Promise<{ httpStatus: number; raw: string }> {
+): Promise<RespuestaEnvio> {
   const url = new URL(SOAP_ENDPOINTS[opts.entorno ?? 'pruebas'])
   const payload = Buffer.from(soapEnvelope(consultaXml(cabecera, f)), 'utf8')
   return new Promise((resolve, reject) => {
@@ -236,7 +236,7 @@ export async function consultar(
         let data = ''
         res.setEncoding('utf8')
         res.on('data', (c) => (data += c))
-        res.on('end', () => resolve({ httpStatus: res.statusCode ?? 0, raw: data }))
+        res.on('end', () => resolve(parseRespuesta(data, res.statusCode ?? 0)))
       },
     )
     req.on('error', reject)
