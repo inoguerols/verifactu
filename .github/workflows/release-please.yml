@@ -1,0 +1,21 @@
+name: release-please
+
+# Mantiene abierto un PR de "Release vX.Y.Z" (version bump + changelog) a partir
+# de los mensajes de commit (Conventional Commits: feat/fix/chore/...). Al
+# mergear ese PR, crea el tag + GitHub Release, que dispara publish.yml.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
