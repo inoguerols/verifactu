@@ -66,17 +66,24 @@ export function parseRespuesta(xml: string, httpStatus = 0): RespuestaEnvio {
   const body = (env.Body ?? env) as Record<string, unknown>
   const resp = (Object.values(body).find(
     (v) => v && typeof v === 'object' && 'RespuestaLinea' in (v as object),
+  ) ?? Object.values(body).find(
+    (v) => v && typeof v === 'object' && ('RegistroRespuestaConsultaFactuSistemaFacturacion' in (v as object) || 'RegistroRespuestaConsulta' in (v as object)),
   ) ?? {}) as Record<string, unknown>
-  const rawLineas = resp.RespuestaLinea
+  const rawLineas = resp.RespuestaLinea ?? resp.RegistroRespuestaConsultaFactuSistemaFacturacion ?? resp.RegistroRespuestaConsulta
   const arr = Array.isArray(rawLineas) ? rawLineas : rawLineas ? [rawLineas] : []
   const lineas: RespuestaLinea[] = arr.map((l) => {
     const o = l as Record<string, unknown>
     const id = (o.IDFactura ?? {}) as Record<string, unknown>
+    // En respuesta de consulta, EstadoRegistro es {EstadoRegistro:"Correcto",...} en vez de string
+    const er = o.EstadoRegistro as Record<string, unknown> | string | undefined
+    const estadoRegistro = typeof er === 'object' && er !== null ? str(er.EstadoRegistro) : str(er)
+    const codigoError = typeof er === 'object' && er !== null ? str(er.CodigoErrorRegistro) : str(o.CodigoErrorRegistro)
+    const descripcionError = typeof er === 'object' && er !== null ? str(er.DescripcionErrorRegistro) : str(o.DescripcionErrorRegistro)
     return {
       numSerieFactura: str(id.NumSerieFactura),
-      estadoRegistro: str(o.EstadoRegistro),
-      codigoError: str(o.CodigoErrorRegistro),
-      descripcionError: str(o.DescripcionErrorRegistro),
+      estadoRegistro,
+      codigoError,
+      descripcionError,
     }
   })
   return {
@@ -156,7 +163,7 @@ export async function enviarSerie(
 const NS_CONS_LR =
   'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/ConsultaLR.xsd'
 const NS_CONS_SF =
-  'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/ConsultaInformacion.xsd'
+  'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd'
 
 function escXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -191,14 +198,15 @@ export function consultaXml(cabecera: Cabecera, f: ConsultaFiltro): string {
     : ''
   return (
     `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<con:ConsultaFactuSistemaFacturacion IDVersion="1.0" xmlns:con="${NS_CONS_LR}" xmlns:sfc="${NS_CONS_SF}">` +
-    `<con:Cabecera><sfc:ObligadoEmision>` +
+    `<con:ConsultaFactuSistemaFacturacion xmlns:con="${NS_CONS_LR}" xmlns:sfc="${NS_CONS_SF}">` +
+    `<con:Cabecera>` +
+    elc('IDVersion', '1.0') +
+    `<sfc:ObligadoEmision>` +
     elc('NombreRazon', cabecera.NombreRazon) +
     elc('NIF', cabecera.NIF) +
     `</sfc:ObligadoEmision></con:Cabecera>` +
     `<con:FiltroConsulta>` +
     periodoImputacion +
-    elc('NIFEmisor', f.NIFEmisor) +
     elc('NumSerieFactura', f.numSerieFactura) +
     clave +
     `</con:FiltroConsulta>` +
@@ -228,7 +236,7 @@ export async function consultar(
         ...opts.credencial,
         headers: {
           'Content-Type': 'text/xml; charset=utf-8',
-          SOAPAction: '""',
+          SOAPAction: '"?op=ConsultaFactuSistemaFacturacion"',
           'Content-Length': payload.length,
         },
       },

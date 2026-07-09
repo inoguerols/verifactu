@@ -7,10 +7,21 @@ const cabecera: Cabecera = { NombreRazon: 'Empresa SL', NIF: 'B12345678' }
 test('consultaXml genera ConsultaFactuSistemaFacturacion con ejercicio y NIF del obligado', () => {
   const xml = consultaXml(cabecera, { ejercicio: '2024', periodo: '01' })
   expect(xml).toContain('ConsultaFactuSistemaFacturacion')
-  expect(xml).toContain('IDVersion="1.0"')
+  expect(xml).toContain('<sfc:IDVersion>1.0</sfc:IDVersion>')
   expect(xml).toContain('2024')
   expect(xml).toContain('B12345678')
   expect(xml).toContain('<sfc:Periodo>01</sfc:Periodo>')
+})
+
+test('consultaXml usa el namespace SuministroInformacion.xsd (no ConsultaInformacion)', () => {
+  const xml = consultaXml(cabecera, { ejercicio: '2024' })
+  expect(xml).toContain('SuministroInformacion.xsd')
+  expect(xml).not.toContain('ConsultaInformacion.xsd')
+})
+
+test('consultaXml NO incluye NIFEmisor en FiltroConsulta', () => {
+  const xml = consultaXml(cabecera, { ejercicio: '2024', NIFEmisor: 'B12345678' })
+  expect(xml).not.toContain('<sfc:NIFEmisor>')
 })
 
 test('consultaXml incluye ClavePaginacion cuando se pasa', () => {

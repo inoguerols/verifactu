@@ -48,3 +48,51 @@ test('parseRespuesta extrae estado, CSV y líneas', () => {
     descripcionError: 'Error de encadenamiento',
   })
 })
+
+// Respuesta de consulta con RegistroRespuestaConsultaFactuSistemaFacturacion (sin RespuestaLinea)
+const RESP_CONSULTA = `<?xml version="1.0"?>
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
+ <env:Body>
+  <tikR:RespuestaConsultaFactuSistemaFacturacion xmlns:tikR="x">
+   <tikR:CSV>DEF456CSV</tikR:CSV>
+   <tikR:EstadoEnvio>Correcto</tikR:EstadoEnvio>
+   <tikR:RegistroRespuestaConsultaFactuSistemaFacturacion>
+    <tikR:IDFactura><tikR:NumSerieFactura>87654321/A11</tikR:NumSerieFactura></tikR:IDFactura>
+    <tikR:EstadoRegistro>
+     <tikR:EstadoRegistro>Correcto</tikR:EstadoRegistro>
+     <tikR:TimestampUltimaModificacion>2024-03-15T10:30:00</tikR:TimestampUltimaModificacion>
+    </tikR:EstadoRegistro>
+   </tikR:RegistroRespuestaConsultaFactuSistemaFacturacion>
+   <tikR:RegistroRespuestaConsultaFactuSistemaFacturacion>
+    <tikR:IDFactura><tikR:NumSerieFactura>87654382/A11</tikR:NumSerieFactura></tikR:IDFactura>
+    <tikR:EstadoRegistro>
+     <tikR:EstadoRegistro>Incorrecto</tikR:EstadoRegistro>
+     <tikR:CodigoErrorRegistro>4104</tikR:CodigoErrorRegistro>
+     <tikR:DescripcionErrorRegistro>Factura no encontrada</tikR:DescripcionErrorRegistro>
+    </tikR:EstadoRegistro>
+   </tikR:RegistroRespuestaConsultaFactuSistemaFacturacion>
+  </tikR:RespuestaConsultaFactuSistemaFacturacion>
+ </env:Body>
+</env:Envelope>`
+
+test('parseRespuesta maneja respuesta de consulta con RegistroRespuestaConsulta', () => {
+  const r = parseRespuesta(RESP_CONSULTA, 200)
+  expect(r.httpStatus).toBe(200)
+  expect(r.estadoEnvio).toBe('Correcto')
+  expect(r.csv).toBe('DEF456CSV')
+  expect(r.lineas).toHaveLength(2)
+  expect(r.lineas[0]).toMatchObject({ numSerieFactura: '87654321/A11', estadoRegistro: 'Correcto' })
+  expect(r.lineas[1]).toMatchObject({
+    numSerieFactura: '87654382/A11',
+    estadoRegistro: 'Incorrecto',
+    codigoError: '4104',
+    descripcionError: 'Factura no encontrada',
+  })
+})
+
+test('parseRespuesta devuelve lineas:[] con XML inválido o vacío', () => {
+  const r = parseRespuesta('<mal>', 500)
+  expect(r.httpStatus).toBe(500)
+  expect(r.lineas).toEqual([])
+  expect(r.estadoEnvio).toBeUndefined()
+})
