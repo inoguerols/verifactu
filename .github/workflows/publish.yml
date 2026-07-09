@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-      - run: npm install -g npm@latest # OIDC trusted publishing requiere npm >= 11.5
+      - run: npm install -g npm@11 # OIDC trusted publishing requiere npm >= 11.5; npm@latest (12.0.0) rompe publish (falta 'sigstore')
       - run: npm ci
       - run: npm test
       - run: npm publish --access public
