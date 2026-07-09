@@ -9,7 +9,7 @@ verificar el cumplimiento** de **VeriFactu** (AEAT) en cualquier desarrollo.
 Sin dependencias de pago ni APIs de terceros: el núcleo es determinista y se
 ejecuta offline.
 
-> **Estado: v1.2 — completa y verificada end-to-end contra la AEAT.**
+> **Estado: v1.3 — completa y verificada end-to-end contra la AEAT.**
 > Una factura de prueba fue **aceptada y registrada en el entorno de
 > preproducción de la AEAT** (`HTTP 200`, con su CSV) usando un certificado de
 > representante por TLS mutuo.
