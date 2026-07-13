@@ -51,7 +51,7 @@ test('parseRespuesta extrae estado, CSV y líneas', () => {
 
 // Respuesta de consulta con RegistroRespuestaConsultaFactuSistemaFacturacion (sin RespuestaLinea).
 // Estructura plana: EstadoRegistro, CodigoErrorRegistro y DescripcionErrorRegistro son hermanos,
-// igual que en RegistroDuplicadoType (SuministroInformacion.xsd).
+// igual que en EstadoRegistroDuplicado (SuministroInformacion.xsd:395).
 const RESP_CONSULTA = `<?xml version="1.0"?>
 <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
  <env:Body>
