@@ -1,6 +1,6 @@
 {
   "name": "@inoguerols/verifactu",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Librería y CLI TypeScript libres (MIT) para VeriFactu (AEAT): huella encadenada SHA-256, QR de cotejo, verificador de cumplimiento, generación de XML (XSD oficial), envío al web service (TLS mutuo), firma XAdES y servidor MCP. Sin APIs de pago ni terceros.",
   "type": "module",
   "license": "MIT",
