@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { consultaXml, enviarSerie, trocear } from '../src/soap.js'
+import { consultaXml, enviarSerie, parseRespuesta, trocear } from '../src/soap.js'
 import type { Cabecera } from '../src/types.js'
 
 const cabecera: Cabecera = { NombreRazon: 'Empresa SL', NIF: 'B12345678' }
@@ -31,6 +31,21 @@ test('consultaXml incluye ClavePaginacion cuando se pasa', () => {
   })
   expect(xml).toContain('ClavePaginacion')
   expect(xml).toContain('F-1')
+})
+
+test('parseRespuesta: consulta con 0 resultados (sin Registro*) conserva EstadoEnvio y CSV', () => {
+  const xml =
+    `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/"><env:Body>` +
+    `<tikR:RespuestaConsultaFactuSistemaFacturacion xmlns:tikR="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/RespuestaConsultaLR.xsd">` +
+    `<tikR:EstadoEnvio>Correcto</tikR:EstadoEnvio>` +
+    `<tikR:CSV>ABC123</tikR:CSV>` +
+    `</tikR:RespuestaConsultaFactuSistemaFacturacion>` +
+    `</env:Body></env:Envelope>`
+  const r = parseRespuesta(xml, 200)
+  expect(r.estadoEnvio).toBe('Correcto')
+  expect(r.csv).toBe('ABC123')
+  expect(r.lineas).toEqual([])
 })
 
 test('trocear parte 2500 elementos en lotes de [1000, 1000, 500]', () => {
