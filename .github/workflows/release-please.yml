@@ -2,7 +2,9 @@ name: release-please
 
 # Mantiene abierto un PR de "Release vX.Y.Z" (version bump + changelog) a partir
 # de los mensajes de commit (Conventional Commits: feat/fix/chore/...). Al
-# mergear ese PR, crea el tag + GitHub Release, que dispara publish.yml.
+# mergear ese PR, crea el tag + GitHub Release y despacha publish.yml.
+# El despacho es explícito porque los eventos creados con GITHUB_TOKEN (la
+# release) no encadenan otros workflows; workflow_dispatch es la excepción.
 on:
   push:
     branches: [main]
@@ -10,12 +12,18 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write # para despachar publish.yml al crear la release
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      - if: ${{ steps.release.outputs.release_created }}
+        run: gh workflow run publish --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
