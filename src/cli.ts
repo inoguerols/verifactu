@@ -202,6 +202,7 @@ async function main(): Promise<number> {
     const entorno = flag('--prod') ? 'produccion' : 'pruebas'
     const r = await consultar(cabecera, filtro, { entorno, credencial })
     console.error(`HTTP ${r.httpStatus}`)
+    if (r.avisos?.length) console.error('Avisos:', r.avisos.join('; '))
     console.log(r.raw)
     return r.httpStatus < 400 ? 0 : 1
   }

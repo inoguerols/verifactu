@@ -50,9 +50,11 @@ export interface RespuestaEnvio {
   lineas: RespuestaLinea[]
   /** Cuerpo XML crudo de la respuesta (siempre presente para depurar). */
   raw: string
+  /** Avisos no bloqueantes (p.ej. campos deprecated ignorados). */
+  avisos?: string[]
 }
 
-/** Extrae estado y líneas de la RespuestaSuministro de la AEAT (tolerante a NS). */
+/** Extrae estado y líneas de la RespuestaSuministro o RespuestaConsultaFactuSistemaFacturacion de la AEAT (tolerante a NS). */
 export function parseRespuesta(xml: string, httpStatus = 0): RespuestaEnvio {
   const p = new XMLParser({ removeNSPrefix: true, ignoreAttributes: true })
   let doc: Record<string, unknown> = {}
@@ -64,14 +66,24 @@ export function parseRespuesta(xml: string, httpStatus = 0): RespuestaEnvio {
   // Buscar el nodo de respuesta sin asumir prefijos exactos.
   const env = (doc.Envelope ?? doc) as Record<string, unknown>
   const body = (env.Body ?? env) as Record<string, unknown>
-  const resp = (Object.values(body).find(
-    (v) => v && typeof v === 'object' && 'RespuestaLinea' in (v as object),
+  const values = Object.values(body)
+  const resp = (values.find(
+    (v) => v && typeof v === 'object' && (
+      'RespuestaLinea' in (v as object) ||
+      'RegistroRespuestaConsultaFactuSistemaFacturacion' in (v as object)
+    ),
+  ) ?? values.find(
+    // Fallback: consulta con 0 resultados (sin nodo Registro*) pero con EstadoEnvio/CSV.
+    (v) => v && typeof v === 'object' && ('EstadoEnvio' in (v as object) || 'CSV' in (v as object)),
   ) ?? {}) as Record<string, unknown>
-  const rawLineas = resp.RespuestaLinea
+  const rawLineas = resp.RespuestaLinea ?? resp.RegistroRespuestaConsultaFactuSistemaFacturacion
   const arr = Array.isArray(rawLineas) ? rawLineas : rawLineas ? [rawLineas] : []
   const lineas: RespuestaLinea[] = arr.map((l) => {
     const o = l as Record<string, unknown>
     const id = (o.IDFactura ?? {}) as Record<string, unknown>
+    // EstadoRegistro es string tanto en envío como en consulta.
+    // CodigoErrorRegistro y DescripcionErrorRegistro son hermanos de EstadoRegistro
+    // (mismo patrón que EstadoRegistroDuplicado en SuministroInformacion.xsd:395).
     return {
       numSerieFactura: str(id.NumSerieFactura),
       estadoRegistro: str(o.EstadoRegistro),
@@ -92,13 +104,10 @@ function str(v: unknown): string | undefined {
   return v === undefined || v === null ? undefined : String(v)
 }
 
-/**
- * Envía un XML `RegFactuSistemaFacturacion` al web service (TLS mutuo).
- * Devuelve la respuesta parseada. Lanza si la conexión falla.
- */
-export async function enviar(regFactuXml: string, opts: EnvioOpts): Promise<RespuestaEnvio> {
+/** Construye y envía una petición SOAP sobre HTTPS (TLS mutuo con certificado). */
+async function soapRequest(xml: string, soapAction: string, opts: EnvioOpts): Promise<RespuestaEnvio> {
   const url = new URL(SOAP_ENDPOINTS[opts.entorno ?? 'pruebas'])
-  const payload = Buffer.from(soapEnvelope(regFactuXml), 'utf8')
+  const payload = Buffer.from(soapEnvelope(xml), 'utf8')
   return new Promise<RespuestaEnvio>((resolve, reject) => {
     const req = request(
       {
@@ -108,7 +117,7 @@ export async function enviar(regFactuXml: string, opts: EnvioOpts): Promise<Resp
         ...opts.credencial,
         headers: {
           'Content-Type': 'text/xml; charset=utf-8',
-          SOAPAction: '""',
+          SOAPAction: soapAction,
           'Content-Length': payload.length,
         },
       },
@@ -123,6 +132,14 @@ export async function enviar(regFactuXml: string, opts: EnvioOpts): Promise<Resp
     req.write(payload)
     req.end()
   })
+}
+
+/**
+ * Envía un XML `RegFactuSistemaFacturacion` al web service (TLS mutuo).
+ * Devuelve la respuesta parseada. Lanza si la conexión falla.
+ */
+export async function enviar(regFactuXml: string, opts: EnvioOpts): Promise<RespuestaEnvio> {
+  return soapRequest(regFactuXml, '""', opts)
 }
 
 /** Un registro a remitir: alta o anulación. */
@@ -156,7 +173,7 @@ export async function enviarSerie(
 const NS_CONS_LR =
   'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/ConsultaLR.xsd'
 const NS_CONS_SF =
-  'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/ConsultaInformacion.xsd'
+  'https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aplicaciones/es/aeat/tike/cont/ws/SuministroInformacion.xsd'
 
 function escXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -169,6 +186,10 @@ function elc(name: string, value: string | undefined): string {
 export interface ConsultaFiltro {
   ejercicio: string
   periodo?: string
+  /**
+   * @deprecated Ignorado. El NIF del emisor se toma de la Cabecera (ObligadoEmision),
+   * no del filtro. Si se pasa, se registra un aviso en `RespuestaEnvio.avisos`.
+   */
   NIFEmisor?: string
   numSerieFactura?: string
   /** Clave para continuar una respuesta paginada (IndicadorPaginacion="S"). */
@@ -176,7 +197,18 @@ export interface ConsultaFiltro {
 }
 
 /** XML de la operación de consulta (schema ConsultaLR.xsd) envuelto en RegFactu de consulta. */
-export function consultaXml(cabecera: Cabecera, f: ConsultaFiltro): string {
+export function consultaXml(cabecera: Cabecera, f: ConsultaFiltro, avisos?: string[]): string {
+  // NIFEmisor no pertenece a FiltroConsulta; el NIF va en Cabecera/ObligadoEmision.
+  // Si alguien lo pasa, registrar aviso como dato (no stderr) para que el consumidor
+  // de la librería pueda capturarlo o suprimirlo.
+  if ((f as unknown as Record<string, unknown>).NIFEmisor !== undefined) {
+    const aviso = 'NIFEmisor en el filtro de consulta es ignorado. El NIF del emisor se toma de la cabecera (ObligadoEmision).'
+    if (avisos) {
+      avisos.push(aviso)
+    } else {
+      console.warn('verifactu:', aviso)
+    }
+  }
   const periodoImputacion =
     `<con:PeriodoImputacion>` +
     elc('Ejercicio', f.ejercicio) +
@@ -191,14 +223,15 @@ export function consultaXml(cabecera: Cabecera, f: ConsultaFiltro): string {
     : ''
   return (
     `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<con:ConsultaFactuSistemaFacturacion IDVersion="1.0" xmlns:con="${NS_CONS_LR}" xmlns:sfc="${NS_CONS_SF}">` +
-    `<con:Cabecera><sfc:ObligadoEmision>` +
+    `<con:ConsultaFactuSistemaFacturacion xmlns:con="${NS_CONS_LR}" xmlns:sfc="${NS_CONS_SF}">` +
+    `<con:Cabecera>` +
+    elc('IDVersion', '1.0') +
+    `<sfc:ObligadoEmision>` +
     elc('NombreRazon', cabecera.NombreRazon) +
     elc('NIF', cabecera.NIF) +
     `</sfc:ObligadoEmision></con:Cabecera>` +
     `<con:FiltroConsulta>` +
     periodoImputacion +
-    elc('NIFEmisor', f.NIFEmisor) +
     elc('NumSerieFactura', f.numSerieFactura) +
     clave +
     `</con:FiltroConsulta>` +
@@ -209,6 +242,11 @@ export function consultaXml(cabecera: Cabecera, f: ConsultaFiltro): string {
 /**
  * Lanza una consulta de registros (TLS mutuo) sobre el mismo servicio SistemaFacturacion.
  * Devuelve la respuesta cruda; el parseo completo (paginación) queda fuera de alcance.
+ *
+ * El WSDL (SistemaFacturacion.wsdl:53) declara soapAction="" para ambas operaciones,
+ * pero en la práctica el endpoint de la AEAT distingue las operaciones por el contenido
+ * del body SOAP. Usar un valor explícito evita ambigüedades con proxies y load balancers.
+ * Verificado contra el entorno de pruebas de la AEAT (funciona correctamente).
  */
 // ponytail: respuestas paginan con IndicadorPaginacion="S" + ClavePaginacion (máx 10000);
 // reenviar consultaXml con f.clavePaginacion para la siguiente página cuando haga falta.
@@ -217,30 +255,12 @@ export async function consultar(
   f: ConsultaFiltro,
   opts: EnvioOpts,
 ): Promise<RespuestaEnvio> {
-  const url = new URL(SOAP_ENDPOINTS[opts.entorno ?? 'pruebas'])
-  const payload = Buffer.from(soapEnvelope(consultaXml(cabecera, f)), 'utf8')
-  return new Promise((resolve, reject) => {
-    const req = request(
-      {
-        host: url.hostname,
-        path: url.pathname,
-        method: 'POST',
-        ...opts.credencial,
-        headers: {
-          'Content-Type': 'text/xml; charset=utf-8',
-          SOAPAction: '""',
-          'Content-Length': payload.length,
-        },
-      },
-      (res) => {
-        let data = ''
-        res.setEncoding('utf8')
-        res.on('data', (c) => (data += c))
-        res.on('end', () => resolve(parseRespuesta(data, res.statusCode ?? 0)))
-      },
-    )
-    req.on('error', reject)
-    req.write(payload)
-    req.end()
-  })
+  const avisos: string[] = []
+  const resp = await soapRequest(
+    consultaXml(cabecera, f, avisos),
+    '"?op=ConsultaFactuSistemaFacturacion"',
+    opts,
+  )
+  if (avisos.length) resp.avisos = avisos
+  return resp
 }
