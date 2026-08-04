@@ -87,6 +87,47 @@ test('parseRespuesta maneja respuesta de consulta con RegistroRespuestaConsulta 
   })
 })
 
+test('parseRespuesta maneja EstadoRegistro como objeto contenedor (TimestampUltimaModificacion anidado)', () => {
+  // La AEAT devuelve EstadoRegistro como contenedor en algunas respuestas de consulta:
+  // <EstadoRegistro><TimestampUltimaModificacion>...</TimestampUltimaModificacion><EstadoRegistro>Correcto</EstadoRegistro></EstadoRegistro>
+  const xml = `<?xml version="1.0"?>
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
+ <env:Body>
+  <tikR:RespuestaConsultaFactuSistemaFacturacion xmlns:tikR="x">
+   <tikR:CSV>NEST001CSV</tikR:CSV>
+   <tikR:EstadoEnvio>Correcto</tikR:EstadoEnvio>
+   <tikR:RegistroRespuestaConsultaFactuSistemaFacturacion>
+    <tikR:IDFactura><tikR:NumSerieFactura>NEST/001</tikR:NumSerieFactura></tikR:IDFactura>
+    <tikR:EstadoRegistro>
+     <tikR:TimestampUltimaModificacion>2025-01-15T10:30:00</tikR:TimestampUltimaModificacion>
+     <tikR:EstadoRegistro>Correcto</tikR:EstadoRegistro>
+    </tikR:EstadoRegistro>
+   </tikR:RegistroRespuestaConsultaFactuSistemaFacturacion>
+   <tikR:RegistroRespuestaConsultaFactuSistemaFacturacion>
+    <tikR:IDFactura><tikR:NumSerieFactura>NEST/002</tikR:NumSerieFactura></tikR:IDFactura>
+    <tikR:EstadoRegistro>
+     <tikR:TimestampUltimaModificacion>2025-01-15T11:00:00</tikR:TimestampUltimaModificacion>
+     <tikR:EstadoRegistro>Incorrecto</tikR:EstadoRegistro>
+     <tikR:CodigoErrorRegistro>5000</tikR:CodigoErrorRegistro>
+     <tikR:DescripcionErrorRegistro>Error interno</tikR:DescripcionErrorRegistro>
+    </tikR:EstadoRegistro>
+   </tikR:RegistroRespuestaConsultaFactuSistemaFacturacion>
+  </tikR:RespuestaConsultaFactuSistemaFacturacion>
+ </env:Body>
+</env:Envelope>`
+  const r = parseRespuesta(xml, 200)
+  expect(r.estadoEnvio).toBe('Correcto')
+  expect(r.csv).toBe('NEST001CSV')
+  expect(r.lineas).toHaveLength(2)
+  expect(r.lineas[0]).toMatchObject({ numSerieFactura: 'NEST/001', estadoRegistro: 'Correcto' })
+  expect(r.lineas[1]).toMatchObject({
+    numSerieFactura: 'NEST/002',
+    estadoRegistro: 'Incorrecto',
+    codigoError: '5000',
+    descripcionError: 'Error interno',
+  })
+})
+
 test('parseRespuesta maneja EstadoRegistro vacío (self-closing) en consulta', () => {
   const xml = `<?xml version="1.0"?>
 <env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
