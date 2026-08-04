@@ -81,14 +81,18 @@ export function parseRespuesta(xml: string, httpStatus = 0): RespuestaEnvio {
   const lineas: RespuestaLinea[] = arr.map((l) => {
     const o = l as Record<string, unknown>
     const id = (o.IDFactura ?? {}) as Record<string, unknown>
-    // EstadoRegistro es string tanto en envío como en consulta.
-    // CodigoErrorRegistro y DescripcionErrorRegistro son hermanos de EstadoRegistro
-    // (mismo patrón que EstadoRegistroDuplicado en SuministroInformacion.xsd:395).
+    // EstadoRegistro puede ser string (envío) u objeto contenedor (consulta):
+    // <EstadoRegistro><TimestampUltimaModificacion>...</TimestampUltimaModificacion><EstadoRegistro>Correcto</EstadoRegistro></EstadoRegistro>
+    // Cuando es objeto, CodigoErrorRegistro y DescripcionErrorRegistro también pueden venir anidados dentro.
+    const er = o.EstadoRegistro as Record<string, unknown> | string | undefined
+    const estadoRegistro = typeof er === 'object' && er !== null ? str(er.EstadoRegistro) : str(er)
+    const codigoError = typeof er === 'object' && er !== null ? str(er.CodigoErrorRegistro) : str(o.CodigoErrorRegistro)
+    const descripcionError = typeof er === 'object' && er !== null ? str(er.DescripcionErrorRegistro) : str(o.DescripcionErrorRegistro)
     return {
       numSerieFactura: str(id.NumSerieFactura),
-      estadoRegistro: str(o.EstadoRegistro),
-      codigoError: str(o.CodigoErrorRegistro),
-      descripcionError: str(o.DescripcionErrorRegistro),
+      estadoRegistro,
+      codigoError,
+      descripcionError,
     }
   })
   return {
