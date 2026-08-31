@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { crearAlta } from './factura.js'
 import type { NuevaAlta } from './factura.js'
 import type { Encadenamiento, RegistroAlta } from './types.js'
@@ -41,8 +41,9 @@ export class FicheroStore implements SerieStore {
   private load(): Record<string, EslabonPrevio> {
     try {
       return JSON.parse(readFileSync(this.path, 'utf8')) as Record<string, EslabonPrevio>
-    } catch {
-      return {}
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {}
+      throw error
     }
   }
 
@@ -53,7 +54,9 @@ export class FicheroStore implements SerieStore {
   guardar(serie: string, e: EslabonPrevio): void {
     const data = this.load()
     data[serie] = e
-    writeFileSync(this.path, JSON.stringify(data, null, 2))
+    const tmp = `${this.path}.tmp`
+    writeFileSync(tmp, JSON.stringify(data, null, 2))
+    renameSync(tmp, this.path)
   }
 }
 
@@ -65,6 +68,7 @@ export class FicheroStore implements SerieStore {
 export class SerieManager {
   private readonly serie: string
   private readonly store: SerieStore
+  private cola: Promise<void> = Promise.resolve()
 
   constructor({ serie, store }: { serie: string; store?: SerieStore }) {
     this.serie = serie
@@ -72,6 +76,20 @@ export class SerieManager {
   }
 
   async anadirAlta(n: Omit<NuevaAlta, 'Encadenamiento'>): Promise<RegistroAlta> {
+    const anterior = this.cola
+    let liberar!: () => void
+    this.cola = new Promise((resolve) => { liberar = resolve })
+    await anterior
+    try {
+      return await this.anadirAltaInterno(n)
+    } finally {
+      liberar()
+    }
+  }
+
+  // ponytail: serializa una instancia. Para varios procesos, el SerieStore debe
+  // ofrecer una operación atómica de lectura, cálculo y escritura.
+  private async anadirAltaInterno(n: Omit<NuevaAlta, 'Encadenamiento'>): Promise<RegistroAlta> {
     const previo = await this.store.ultimo(this.serie)
 
     const encadenamiento: Encadenamiento =

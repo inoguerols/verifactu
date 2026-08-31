@@ -59,7 +59,7 @@ export async function qrFacturaSvg(p: QrParams, entorno: Entorno = 'produccion')
   const hStr = m?.[2] ?? '256'
   const w = Number(wStr)
   const h = Number(hStr)
-  const labelH = 14
+  const labelH = Math.max(3, w * 0.09)
   const newH = h + 4 + labelH
   return svg
     .replace(`viewBox="0 0 ${wStr} ${hStr}"`, `viewBox="0 0 ${w} ${newH}"`)

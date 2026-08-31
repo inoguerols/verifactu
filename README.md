@@ -9,7 +9,7 @@ verificar el cumplimiento** de **VeriFactu** (AEAT) en cualquier desarrollo.
 Sin dependencias de pago ni APIs de terceros: el núcleo es determinista y se
 ejecuta offline.
 
-> **Estado: v1.3 — completa y verificada end-to-end contra la AEAT.**
+> **Estado: v1.5 — completa y verificada end-to-end contra la AEAT.**
 > Una factura de prueba fue **aceptada y registrada en el entorno de
 > preproducción de la AEAT** (`HTTP 200`, con su CSV) usando un certificado de
 > representante por TLS mutuo.
@@ -70,7 +70,7 @@ TypeScript, **independiente** y con **verificador de cumplimiento**.
 ## Instalación
 
 ```bash
-npm i @inoguerols/verifactu        # publicada en npm (latest: 1.0.0)
+npm i @inoguerols/verifactu        # publicada en npm (latest: 1.5.0)
 npm i github:inoguerols/verifactu  # o directamente desde GitHub
 ```
 
@@ -173,6 +173,11 @@ const registro = await serie.anadirAlta({
 // registro ya viene encadenado, con la hora actual y la Huella calculada.
 ```
 
+`SerieManager` serializa las llamadas concurrentes de una misma instancia. Para
+varios procesos, usa un `SerieStore` con una operación atómica de lectura y
+escritura; `FicheroStore` está pensado para un único proceso y rechaza ficheros
+corruptos para no reiniciar la cadena silenciosamente.
+
 > **Servidor MCP:** el paquete incluye el binario **`verifactu-mcp`** (servidor MCP por
 > stdio) que expone la huella, el `lint`, el QR, la validación de NIF y la generación de
 > XML como herramientas para Claude y otros clientes MCP. Alta en Claude Code:
@@ -187,7 +192,7 @@ verifactu lint examples/serie-valida.json
 
 # Remitir al web service AEAT (TLS mutuo). El JSON admite:
 #   { cabecera, alta } | { cabecera, anulacion } | { cabecera, registros:[ {alta}|{anulacion}, ... ] }
-# Lotes >1000 se trocean automáticamente. Sin --prod va a preproducción.
+# Lotes >1000 se trocean automáticamente, también con --dry-run. Sin --prod va a preproducción.
 verifactu enviar examples/envio-alta.json      --pfx cert.p12 --passphrase secreto
 verifactu enviar examples/envio-lote.json      --cert cert.pem --key key.pem --prod
 verifactu enviar examples/envio-anulacion.json --pfx cert.p12 --dry-run   # imprime el SOAP, no envía
@@ -231,7 +236,8 @@ Dos detalles que la AEAT valida en preproducción (son de datos, no de la librer
 
 ## Cumplimiento: qué comprueba `lint`
 
-Formato y presencia de campos · **NIF con dígito de control** (DNI/NIE/CIF) ·
+Formato y presencia de campos · **NIF con dígito de control** (DNI/NIE/CIF y
+especiales K/L/M) ·
 `TipoFactura` válido (F1/F2/F3/R1–R5) · **destinatario obligatorio** salvo F2 o
 factura sin identificación · **desglose** (exactamente una de
 `CalificacionOperacion` S1/S2/N1/N2 u `OperacionExenta` E1–E8; S1 exige tipo y

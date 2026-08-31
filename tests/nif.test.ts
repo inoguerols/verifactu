@@ -16,6 +16,15 @@ test('CIF: dígito/letra de control', () => {
   expect(validarNif('B12345678')).toBe(false) // el control debería ser 4
 })
 
+test('NIF especiales K/L/M y CIF con letra de control obligatoria', () => {
+  expect(validarNif('K0000000T')).toBe(true)
+  expect(validarNif('L0000000T')).toBe(true)
+  expect(validarNif('M0000000T')).toBe(true)
+  expect(validarNif('K0000000A')).toBe(false)
+  expect(validarNif('N0000000J')).toBe(true)
+  expect(validarNif('N00000000')).toBe(false)
+})
+
 test('formato inválido → false', () => {
   expect(validarNif('123')).toBe(false)
   expect(validarNif('123456789')).toBe(false) // 9 dígitos sin letra no es DNI/CIF válido

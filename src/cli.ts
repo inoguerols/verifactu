@@ -13,6 +13,7 @@ import {
   enviar,
   enviarSerie,
   soapEnvelope,
+  trocear,
 } from './soap.js'
 import type { Cabecera, RegistroAlta, RegistroAnulacion } from './types.js'
 import { xmlLote, xmlRegistroAlta, xmlRegistroAnulacion } from './xml.js'
@@ -155,7 +156,7 @@ async function main(): Promise<number> {
     items.forEach(asegurarHuella)
 
     if (flag('--dry-run')) {
-      console.log(soapEnvelope(xmlDeItems(cabecera, items)))
+      for (const lote of trocear(items)) console.log(soapEnvelope(xmlDeItems(cabecera, lote)))
       return 0
     }
 
