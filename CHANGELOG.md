@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/inoguerols/verifactu/compare/verifactu-v1.4.0...verifactu-v1.5.0) (2026-08-31)
+
+
+### Features
+
+* mejorar validación y consulta de registros VeriFactu ([b89d9f9](https://github.com/inoguerols/verifactu/commit/b89d9f9cf53922e13dab0297072df70c56dbdd45))
+
+
+### Bug Fixes
+
+* extraer EstadoRegistro, CodigoErrorRegistro y DescripcionErrorRegistro de objeto contenedor en consultas AEAT ([a8e26be](https://github.com/inoguerols/verifactu/commit/a8e26bec667f2607ef1b592d84e9d4af5da4453c))
+
 ## [1.4.0](https://github.com/inoguerols/verifactu/compare/verifactu-v1.3.0...verifactu-v1.4.0) (2026-07-15)
 
 
