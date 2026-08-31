@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { computeHuellaAlta, computeHuellaAnulacion } from '../src/huella.js'
-import { lint, lintAnulaciones } from '../src/lint.js'
+import { lint, lintAnulaciones, validarCamposAlta, validarCamposAnulacion } from '../src/lint.js'
 import type { RegistroAlta, RegistroAnulacion } from '../src/types.js'
 
 const SIF = {
@@ -171,4 +171,32 @@ test('lintAnulaciones: cadena válida sin errores; huella manipulada → cadena-
   expect(lintAnulaciones([a0]).errores).toBe(0)
   const manip = { ...a0, Huella: 'A'.repeat(64) }
   expect(lintAnulaciones([manip]).incidencias.some((x) => x.code === 'cadena-rota')).toBe(true)
+})
+
+test('validarCamposAlta: valida un registro aislado sin exigir cadena', () => {
+  const r0 = alta('12345678/G33', '')
+  const informe = validarCamposAlta(r0)
+  expect(informe.total).toBe(1)
+  expect(informe.ok).toBe(true)
+  const sinFecha = { ...r0, IDFactura: { ...r0.IDFactura, FechaExpedicionFactura: '' } }
+  expect(validarCamposAlta(sinFecha).incidencias.some((x) => x.code === 'falta-fecha')).toBe(true)
+})
+
+test('validarCamposAnulacion: valida un registro aislado sin exigir cadena', () => {
+  const a0 = anul('12345678/G33', '')
+  const informe = validarCamposAnulacion(a0)
+  expect(informe.total).toBe(1)
+  expect(informe.ok).toBe(true)
+  const sinNumSerie = { ...a0, IDFactura: { ...a0.IDFactura, NumSerieFactura: '' } }
+  expect(validarCamposAnulacion(sinNumSerie).incidencias.some((x) => x.code === 'falta-numserie')).toBe(true)
+})
+
+test('validarCamposAlta y validarCamposAnulacion coinciden con los diagnósticos de campo de lint', () => {
+  const r0 = alta('12345678/G33', '')
+  const malo = { ...r0, IDFactura: { ...r0.IDFactura, IDEmisorFactura: 'B12345678' } }
+  expect(validarCamposAlta(malo).incidencias.some((x) => x.code === 'nif-emisor')).toBe(true)
+
+  const a0 = anul('12345678/G33', '')
+  const sinSif = { ...a0, SistemaInformatico: { ...SIF, NombreSistemaInformatico: '' } }
+  expect(validarCamposAnulacion(sinSif).incidencias.some((x) => x.code === 'falta-sif')).toBe(true)
 })
