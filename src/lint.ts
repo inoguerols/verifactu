@@ -201,6 +201,44 @@ function checkCamposAlta(r: RegistroAlta, i: number, add: Add): void {
     add(i, 'warn', 'importe-total', `ImporteTotal (${r.ImporteTotal}) no cuadra con base+cuota del desglose (${sumaBaseCuota.toFixed(2)})`)
 }
 
+/** Comprobaciones de campo/formato de un registro de anulación (sin cadena). */
+function checkCamposAnulacion(r: RegistroAnulacion, i: number, add: Add): void {
+  const f = r.IDFactura
+  if (!f?.IDEmisorFactura) add(i, 'error', 'falta-nif-emisor', 'Falta IDEmisorFactura (anulada)')
+  else if (!validarNif(f.IDEmisorFactura))
+    add(i, 'error', 'nif-emisor', `IDEmisorFactura no es un NIF válido: "${f.IDEmisorFactura}"`)
+  if (!f?.NumSerieFactura) add(i, 'error', 'falta-numserie', 'Falta NumSerieFactura (anulada)')
+  if (!f?.FechaExpedicionFactura) add(i, 'error', 'falta-fecha', 'Falta FechaExpedicionFactura (anulada)')
+  else if (!RE_FECHA.test(f.FechaExpedicionFactura))
+    add(i, 'error', 'fecha-formato', `FechaExpedicionFactura debe ser dd-mm-yyyy: "${f.FechaExpedicionFactura}"`)
+  if (!RE_ISO_HUSO.test(r.FechaHoraHusoGenRegistro))
+    add(i, 'error', 'fechahora-formato', `FechaHoraHusoGenRegistro debe ser ISO 8601 con huso: "${r.FechaHoraHusoGenRegistro}"`)
+  if (!r.SistemaInformatico?.NombreSistemaInformatico)
+    add(i, 'error', 'falta-sif', 'Falta SistemaInformatico (declaración del SIF)')
+}
+
+/**
+ * Valida los campos de un único registro de alta (sin la cadena de huellas).
+ * Reutiliza las mismas reglas que `lint()`.
+ */
+export function validarCamposAlta(registro: RegistroAlta): InformeCumplimiento {
+  const incidencias: Incidencia[] = []
+  const add: Add = (index, nivel, code, message) => incidencias.push({ index, nivel, code, message })
+  checkCamposAlta(registro, 0, add)
+  return nuevoInforme(incidencias, 1)
+}
+
+/**
+ * Valida los campos de un único registro de anulación (sin la cadena de huellas).
+ * Reutiliza las mismas reglas que `lintAnulaciones()`.
+ */
+export function validarCamposAnulacion(registro: RegistroAnulacion): InformeCumplimiento {
+  const incidencias: Incidencia[] = []
+  const add: Add = (index, nivel, code, message) => incidencias.push({ index, nivel, code, message })
+  checkCamposAnulacion(registro, 0, add)
+  return nuevoInforme(incidencias, 1)
+}
+
 /**
  * Verifica una serie de registros de alta en el orden de la cadena.
  * `registros[0]` debe ser el primer registro de la serie (Huella anterior vacía).
@@ -282,19 +320,9 @@ export function lintAnulaciones(registros: RegistroAnulacion[]): InformeCumplimi
 
   let huellaAnterior = ''
   registros.forEach((r, i) => {
-    const f = r.IDFactura
-    if (!f?.IDEmisorFactura) add(i, 'error', 'falta-nif-emisor', 'Falta IDEmisorFactura (anulada)')
-    else if (!validarNif(f.IDEmisorFactura))
-      add(i, 'error', 'nif-emisor', `IDEmisorFactura no es un NIF válido: "${f.IDEmisorFactura}"`)
-    if (!f?.NumSerieFactura) add(i, 'error', 'falta-numserie', 'Falta NumSerieFactura (anulada)')
-    if (!f?.FechaExpedicionFactura) add(i, 'error', 'falta-fecha', 'Falta FechaExpedicionFactura (anulada)')
-    else if (!RE_FECHA.test(f.FechaExpedicionFactura))
-      add(i, 'error', 'fecha-formato', `FechaExpedicionFactura debe ser dd-mm-yyyy: "${f.FechaExpedicionFactura}"`)
-    if (!RE_ISO_HUSO.test(r.FechaHoraHusoGenRegistro))
-      add(i, 'error', 'fechahora-formato', `FechaHoraHusoGenRegistro debe ser ISO 8601 con huso: "${r.FechaHoraHusoGenRegistro}"`)
-    if (!r.SistemaInformatico?.NombreSistemaInformatico)
-      add(i, 'error', 'falta-sif', 'Falta SistemaInformatico (declaración del SIF)')
+    checkCamposAnulacion(r, i, add)
 
+    const f = r.IDFactura
     const enc = r.Encadenamiento
     if (!enc || typeof enc !== 'object') {
       add(i, 'error', 'falta-encadenamiento', 'Falta Encadenamiento')
