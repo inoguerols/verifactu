@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.1](https://github.com/inoguerols/verifactu/compare/verifactu-v1.5.0...verifactu-v1.5.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* corregir integridad y serialización VeriFactu ([3533013](https://github.com/inoguerols/verifactu/commit/353301374ec5d76be8713c50a1d5835b4e8c3aa4))
+* corregir validación y serialización Verifactu ([6b3800b](https://github.com/inoguerols/verifactu/commit/6b3800be4d19da362196734530f8fb6680d53909))
+
 ## [1.5.0](https://github.com/inoguerols/verifactu/compare/verifactu-v1.4.0...verifactu-v1.5.0) (2026-08-31)
 
 
