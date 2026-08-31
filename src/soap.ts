@@ -22,6 +22,8 @@ export interface EnvioOpts {
   /** 'pruebas' (preproducción) por defecto; 'produccion' para envío real. */
   entorno?: Entorno
   credencial: Credencial
+  /** Tiempo máximo de espera de la respuesta AEAT, en milisegundos (60 s por defecto). */
+  timeout?: number
 }
 
 /** Envuelve el XML `RegFactuSistemaFacturacion` en un sobre SOAP 1.1. */
@@ -118,6 +120,7 @@ async function soapRequest(xml: string, soapAction: string, opts: EnvioOpts): Pr
         host: url.hostname,
         path: url.pathname,
         method: 'POST',
+        timeout: opts.timeout ?? 60_000,
         ...opts.credencial,
         headers: {
           'Content-Type': 'text/xml; charset=utf-8',
@@ -132,6 +135,7 @@ async function soapRequest(xml: string, soapAction: string, opts: EnvioOpts): Pr
         res.on('end', () => resolve(parseRespuesta(data, res.statusCode ?? 0)))
       },
     )
+    req.setTimeout(opts.timeout ?? 60_000, () => req.destroy(new Error('Tiempo de espera agotado al contactar con la AEAT')))
     req.on('error', reject)
     req.write(payload)
     req.end()

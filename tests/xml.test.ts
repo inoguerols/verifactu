@@ -78,6 +78,20 @@ test('XML de alta: escape de & en texto', () => {
   expect(xmlRegistroAlta(ALTA, CABECERA)).toContain('Servicio dental &amp; revisión')
 })
 
+test('XML de alta: serializa todos los campos del desglose en orden XSD', () => {
+  const xml = xmlRegistroAlta({
+    ...ALTA,
+    Desglose: [{
+      ...ALTA.Desglose[0]!,
+      Impuesto: '01',
+      BaseImponibleACoste: '80.00',
+      TipoRecargoEquivalencia: '5.20',
+      CuotaRecargoEquivalencia: '5.20',
+    }],
+  }, CABECERA)
+  expect(xml).toMatch(/<sf:Impuesto>01<\/sf:Impuesto>.*<sf:BaseImponibleACoste>80.00<\/sf:BaseImponibleACoste>.*<sf:TipoRecargoEquivalencia>5.20<\/sf:TipoRecargoEquivalencia>.*<sf:CuotaRecargoEquivalencia>5.20<\/sf:CuotaRecargoEquivalencia>/)
+})
+
 test('XML de anulación: estructura mínima', () => {
   const xml = xmlRegistroAnulacion(
     {

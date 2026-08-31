@@ -50,6 +50,7 @@ export interface DesgloseItem {
   OperacionExenta?: string
   TipoImpositivo?: string
   BaseImponibleOimporteNoSujeto?: string
+  BaseImponibleACoste?: string
   CuotaRepercutida?: string
   TipoRecargoEquivalencia?: string
   CuotaRecargoEquivalencia?: string

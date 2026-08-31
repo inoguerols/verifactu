@@ -1,5 +1,6 @@
 // verifactu — librería TS libre para VeriFactu (AEAT). MIT.
-export const VERSION = '0.1.0'
+declare const __VERIFACTU_VERSION__: string
+export const VERSION = __VERIFACTU_VERSION__
 export * from './types.js'
 export * from './huella.js'
 export * from './nif.js'

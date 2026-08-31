@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { qrUrl, qrSvg } from '../src/qr.js'
+import { qrFacturaSvg, qrUrl, qrSvg } from '../src/qr.js'
 
 const P = { nif: '89890001K', numserie: '12345678/G33', fecha: '01-01-2024', importe: '123.45' }
 
@@ -22,4 +22,11 @@ test('entorno de pruebas usa prewww2', () => {
 test('render SVG produce un <svg>', async () => {
   const svg = await qrSvg(P)
   expect(svg).toContain('<svg')
+})
+
+test('SVG de factura escala la leyenda al viewBox del QR', async () => {
+  const svg = await qrFacturaSvg(P)
+  const [, ancho] = /viewBox="0 0 (\d+(?:\.\d+)?)/.exec(svg) ?? []
+  const [, fuente] = /font-size="(\d+(?:\.\d+)?)"/.exec(svg) ?? []
+  expect(Number(fuente)).toBeLessThan(Number(ancho) / 5)
 })

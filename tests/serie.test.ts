@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { unlinkSync } from 'node:fs'
+import { unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { FicheroStore, MemoriaStore, SerieManager } from '../src/serie.js'
@@ -78,4 +78,22 @@ test('FicheroStore: persiste el eslabón entre dos instancias de SerieManager', 
   } finally {
     try { unlinkSync(tmpFile) } catch { /* noop */ }
   }
+})
+
+test('FicheroStore: no oculta un fichero corrupto', () => {
+  const tmpFile = join(tmpdir(), `verifactu-serie-${Date.now()}.json`)
+  try {
+    writeFileSync(tmpFile, '{')
+    expect(() => new FicheroStore(tmpFile).ultimo('FS')).toThrow()
+  } finally {
+    try { unlinkSync(tmpFile) } catch { /* noop */ }
+  }
+})
+
+test('SerieManager: serializa altas concurrentes de la misma instancia', async () => {
+  const mgr = new SerieManager({ serie: 'CONC', store: new MemoriaStore() })
+  const [r0, r1] = await Promise.all([mgr.anadirAlta(base('F-020')), mgr.anadirAlta(base('F-021'))])
+  expect('PrimerRegistro' in r0.Encadenamiento).toBe(true)
+  expect('RegistroAnterior' in r1.Encadenamiento).toBe(true)
+  if ('RegistroAnterior' in r1.Encadenamiento) expect(r1.Encadenamiento.RegistroAnterior.Huella).toBe(r0.Huella)
 })

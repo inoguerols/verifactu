@@ -23,6 +23,12 @@ function validarNie(nif: string): boolean {
   return letraDni(Number(prefijo + m[2])) === m[3]
 }
 
+function validarNifEspecial(nif: string): boolean {
+  const m = /^([KLM])(\d{7})([A-Z])$/.exec(nif)
+  if (!m) return false
+  return letraDni(Number(m[2])) === m[3]
+}
+
 /** CIF: letra org. + 7 dígitos + control (dígito o letra según tipo de org.). */
 function validarCif(nif: string): boolean {
   const m = /^([ABCDEFGHJNPQRSUVW])(\d{7})([0-9A-J])$/.exec(nif)
@@ -45,10 +51,10 @@ function validarCif(nif: string): boolean {
   const suma = par + impar
   const digitoControl = (10 - (suma % 10)) % 10
   const letraControl = CIF_LETRAS[digitoControl] as string
-  // Org. con control numérico (A,B,E,H), con control alfabético (K,P,Q,S) y el
+  // Org. con control numérico (A,B,E,H), con control alfabético (N,P,Q,R,S,W) y el
   // resto admiten cualquiera de las dos formas.
   if ('ABEH'.includes(tipo)) return control === String(digitoControl)
-  if ('KPQS'.includes(tipo)) return control === letraControl
+  if ('NPQRSW'.includes(tipo)) return control === letraControl
   return control === String(digitoControl) || control === letraControl
 }
 
@@ -58,5 +64,5 @@ function validarCif(nif: string): boolean {
  */
 export function validarNif(nif: string): boolean {
   if (!/^[0-9A-Z]{9}$/.test(nif)) return false
-  return validarDni(nif) || validarNie(nif) || validarCif(nif)
+  return validarDni(nif) || validarNie(nif) || validarNifEspecial(nif) || validarCif(nif)
 }

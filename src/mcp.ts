@@ -4,10 +4,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
-import { computeHuellaAlta, lint, qrSvg, qrUrl, validarNif, xmlRegistroAlta } from './index.js'
+import { VERSION, computeHuellaAlta, lint, qrSvg, qrUrl, validarNif, xmlRegistroAlta } from './index.js'
 import type { Cabecera, RegistroAlta } from './index.js'
 
-const server = new McpServer({ name: 'verifactu', version: '1.2.0' })
+const server = new McpServer({ name: 'verifactu', version: VERSION })
 
 server.tool(
   'verifactu_huella_alta',

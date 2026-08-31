@@ -42,7 +42,8 @@ function sistemaInformatico(s: SistemaInformatico): string {
 }
 
 // Orden XSD de DetalleType: Impuesto?, ClaveRegimen?, (Calificacion|Exenta),
-// TipoImpositivo?, BaseImponible, CuotaRepercutida?
+// TipoImpositivo?, BaseImponible, BaseImponibleACoste?, CuotaRepercutida?,
+// TipoRecargoEquivalencia?, CuotaRecargoEquivalencia?
 function detalle(d: DesgloseItem): string {
   const calif =
     d.OperacionExenta !== undefined
@@ -50,11 +51,15 @@ function detalle(d: DesgloseItem): string {
       : el('CalificacionOperacion', d.CalificacionOperacion)
   return (
     `<sf:DetalleDesglose>` +
+    el('Impuesto', d.Impuesto) +
     el('ClaveRegimen', d.ClaveRegimen) +
     calif +
     el('TipoImpositivo', d.TipoImpositivo) +
     el('BaseImponibleOimporteNoSujeto', d.BaseImponibleOimporteNoSujeto) +
+    el('BaseImponibleACoste', d.BaseImponibleACoste) +
     el('CuotaRepercutida', d.CuotaRepercutida) +
+    el('TipoRecargoEquivalencia', d.TipoRecargoEquivalencia) +
+    el('CuotaRecargoEquivalencia', d.CuotaRecargoEquivalencia) +
     `</sf:DetalleDesglose>`
   )
 }
