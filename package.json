@@ -51,12 +51,12 @@
   },
   "dependencies": {
     "@peculiar/webcrypto": "^1.7.1",
-    "@xmldom/xmldom": "^0.8.13",
+    "@xmldom/xmldom": "^0.9.12",
     "fast-xml-parser": "^4.5.0",
     "qrcode": "^1.5.4",
-    "xadesjs": "^2.6.7",
-    "xml-core": "^1.2.5",
-    "xmldsigjs": "^2.8.7",
+    "xadesjs": "^2.6.8",
+    "xml-core": "^1.2.6",
+    "xmldsigjs": "^2.8.8",
     "xpath": "^0.0.34"
   },
   "optionalDependencies": {
