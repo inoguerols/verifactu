@@ -52,7 +52,7 @@
   "dependencies": {
     "@peculiar/webcrypto": "^1.7.1",
     "@xmldom/xmldom": "^0.9.12",
-    "fast-xml-parser": "^4.5.0",
+    "fast-xml-parser": "^5.11.1",
     "qrcode": "^1.5.4",
     "xadesjs": "^2.6.8",
     "xml-core": "^1.2.6",
@@ -70,7 +70,7 @@
     "reflect-metadata": "^0.2.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=18"

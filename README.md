@@ -76,6 +76,9 @@ npm i github:inoguerols/verifactu  # o directamente desde GitHub
 
 Node ≥ 18. ESM.
 
+Para desarrollo y tests, usa Node 22.12+ (22 LTS, como en CI) o Node 24 LTS.
+Este requisito de las herramientas no cambia el de la librería publicada.
+
 ## Uso (librería)
 
 ```ts
