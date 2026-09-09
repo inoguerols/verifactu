@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.2](https://github.com/inoguerols/verifactu/compare/verifactu-v1.5.1...verifactu-v1.5.2) (2026-09-09)
+
+
+### Bug Fixes
+
+* actualizar dependencias vulnerables ([e118022](https://github.com/inoguerols/verifactu/commit/e1180227d198750abab8ffdcfe21c0fc54de87a2))
+* actualizar dependencias vulnerables ([3b4306f](https://github.com/inoguerols/verifactu/commit/3b4306f5bca568e0ee28f1e72857e0d9d5991559))
+
 ## [1.5.1](https://github.com/inoguerols/verifactu/compare/verifactu-v1.5.0...verifactu-v1.5.1) (2026-08-31)
 
 
