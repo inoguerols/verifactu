@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/inoguerols/verifactu/compare/verifactu-v1.5.2...verifactu-v1.5.3) (2026-09-21)
+
+
+### Bug Fixes
+
+* **lint:** R5 no debe exigir Destinatarios ([#15](https://github.com/inoguerols/verifactu/issues/15)) ([902b278](https://github.com/inoguerols/verifactu/commit/902b2782a0d00bb679e108ccdb39390fd3cc0294))
+
 ## [1.5.2](https://github.com/inoguerols/verifactu/compare/verifactu-v1.5.1...verifactu-v1.5.2) (2026-09-09)
 
 
