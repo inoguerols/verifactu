@@ -128,6 +128,12 @@ test('F1 sin Destinatarios → falta-destinatario; F2 sin Destinatarios → exen
   expect(codigos(lint([f2Sin]))).not.toContain('falta-destinatario')
 })
 
+test('R5 sin Destinatarios → exento (AEAT 1189/1190: R5 no admite destinatario)', () => {
+  const r0 = alta('A/1', '')
+  const r5Sin = { ...r0, TipoFactura: 'R5' as const, Destinatarios: undefined }
+  expect(codigos(lint([r5Sin]))).not.toContain('falta-destinatario')
+})
+
 test('detalle con Calificación Y Exención a la vez → desglose-calif', () => {
   const r0 = alta('A/1', '')
   const malo = { ...r0, Desglose: [{ CalificacionOperacion: 'S1', OperacionExenta: 'E1', TipoImpositivo: '21', BaseImponibleOimporteNoSujeto: '100.00', CuotaRepercutida: '21.00' }] }

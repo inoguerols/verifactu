@@ -75,9 +75,11 @@ function checkPersona(p: Persona, i: number, add: Add, etiqueta: string): void {
 }
 
 function checkDestinatarios(r: RegistroAlta, i: number, add: Add): void {
-  // F2 simplificada y las marcadas sin identificación de destinatario no lo exigen.
+  // F2 simplificada, R5 (rectificativa de simplificada) y las marcadas sin
+  // identificación de destinatario no lo exigen. AEAT 1189/1190.
   const exime =
     r.TipoFactura === 'F2' ||
+    r.TipoFactura === 'R5' ||
     r.FacturaSinIdentifDestinatarioArt61d === 'S' ||
     r.FacturaSimplificadaArt7273 === 'S'
   const ds = r.Destinatarios
